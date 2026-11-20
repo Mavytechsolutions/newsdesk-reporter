@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">MAVY News Maker</string>
+    <string name="title_activity_main">MAVY News Maker</string>
+    <string name="package_name">com.mavytech.newsmaker</string>
+    <string name="custom_url_scheme">com.mavytech.newsmaker</string>
+</resources>
