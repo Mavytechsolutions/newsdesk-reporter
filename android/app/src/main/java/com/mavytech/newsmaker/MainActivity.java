@@ -15,6 +15,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(SaveVideoPlugin.class);
+        registerPlugin(GalleryPlugin.class);
         super.onCreate(savedInstanceState);
         getWindow().getDecorView().setBackgroundColor(Color.parseColor("#0E1014"));
         WebSettings s = getBridge().getWebView().getSettings();
