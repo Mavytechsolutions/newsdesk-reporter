@@ -39,11 +39,11 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           chmod +x gradlew
-          if [ -n "$ANDROID_KEYSTORE_FILE" ]; then ./gradlew --no-daemon bundleRelease assembleRelease; else ./gradlew --no-daemon assembleDebug; fi
+          if [ -n "$ANDROID_KEYSTORE_FILE" ]; then ./gradlew --no-daemon bundleRelease assembleRelease; else ./gradlew --no-daemon assembleDebug bundleRelease; fi
       - name: Collect files
         run: |
           mkdir -p out
-          cp android/app/build/outputs/bundle/release/*.aab out/MAVY-News-Maker-$APP_VERSION_NAME.aab 2>/dev/null || true
+          cp android/app/build/outputs/bundle/release/*.aab out/MAVY-News-Maker-$APP_VERSION_NAME$([ -z "$ANDROID_KEYSTORE_FILE" ] && echo -unsigned).aab 2>/dev/null || true
           cp android/app/build/outputs/apk/release/*.apk out/MAVY-News-Maker-$APP_VERSION_NAME.apk 2>/dev/null || true
           cp android/app/build/outputs/apk/debug/*.apk out/MAVY-News-Maker-$APP_VERSION_NAME-test.apk 2>/dev/null || true
           ls -la out
