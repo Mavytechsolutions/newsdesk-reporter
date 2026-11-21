@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">APBJA</string>
+    <!-- The address of the APBJA server. Change here only if the server address changes. -->
+    <string name="app_url">http://194.238.17.81:8473/</string>
+</resources>

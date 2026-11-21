@@ -1,0 +1,33 @@
+// APBJA Android app: opens the APBJA server full screen.
+// The app screens come from the server, so normal updates need NO new APK.
+// Only if this Android part changes: raise versionCode by 1 and set a new versionName.
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'com.apbja.app'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.apbja.app'
+        minSdk 24
+        targetSdk 35
+        versionCode 1
+        versionName '1.0.0'
+    }
+    signingConfigs {
+        // Key for the shared APK. For Google Play, use a new private upload key instead.
+        apbja {
+            storeFile file('../apbja-release.keystore')
+            storePassword 'apbja2026'
+            keyAlias 'apbja'
+            keyPassword 'apbja2026'
+        }
+    }
+    buildTypes {
+        release { minifyEnabled false; signingConfig signingConfigs.apbja }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}

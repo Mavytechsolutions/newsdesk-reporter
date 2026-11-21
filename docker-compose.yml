@@ -1,0 +1,14 @@
+# APBJA server on the Hostinger VPS. Separate from every other site on the server.
+# Data: /var/lib/apbja (database + photos + daily backups). Code: pulled from GitHub.
+services:
+  apbja:
+    image: node:22-alpine
+    container_name: apbja
+    restart: unless-stopped
+    ports:
+      - "8473:8080"
+    environment:
+      - SEED_B64=${SEED_B64}
+    volumes:
+      - /var/lib/apbja:/data
+    command: ["sh", "-c", "apk add --no-cache git >/dev/null && ( [ -d /src/.git ] || git clone -q --depth 1 -b apbja-app https://github.com/Mavytechsolutions/newsdesk-reporter /src ) && exec sh /src/server/run.sh"]
