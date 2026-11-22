@@ -18,7 +18,14 @@ let S;
 function blank(o) { return { id:'', phone:'', name:'', org:'', job:'', district:'', area:'', address:'', photo:'', post:'Member', no:0, status:'approved', admin:false, head:null, mid:'', note:'', approvedAt:0, approvedBy:'', ...o }; }
 function seed() {
   let rows = [];
-  try { if (process.env.SEED_B64) rows = JSON.parse(zlib.gunzipSync(Buffer.from(process.env.SEED_B64, 'base64')).toString()); } catch (e) { console.error('seed read failed', e.message); }
+  try {
+    if (process.env.SEED_B64) rows = JSON.parse(zlib.gunzipSync(Buffer.from(process.env.SEED_B64, 'base64')).toString());
+    else if (process.env.SEED_KEY) { // member list, locked with a key that lives only on the server
+      const b = Buffer.from(fs.readFileSync(path.join(__dirname, 'seed.enc'), 'utf8'), 'base64');
+      const d = crypto.createDecipheriv('aes-256-gcm', Buffer.from(process.env.SEED_KEY, 'hex'), b.subarray(0, 12)); d.setAuthTag(b.subarray(12, 28));
+      rows = JSON.parse(zlib.gunzipSync(Buffer.concat([d.update(b.subarray(28)), d.final()])).toString());
+    }
+  } catch (e) { console.error('seed read failed', e.message); }
   let n = 1; const M = [];
   const add = o => { const m = blank({ id: 'm' + (n++), ...o }); M.push(m); return m; };
   add({ phone: ADMIN_PHONE, name: 'APBJA Admin', admin: true, org: 'APBJA', area: 'Andhra Pradesh', mid: '0001' });
