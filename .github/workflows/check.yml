@@ -1,0 +1,20 @@
+# Checks from the internet that the APBJA server answers. Result: apbja-check branch.
+name: Server check
+on:
+  push:
+    branches: [apbja-app]
+    paths: ['.github/workflows/check.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check
+        run: |
+          mkdir out
+          { date -u; curl -sS -m 20 http://194.238.17.81:8473/api/health; echo; curl -sS -m 20 -o /dev/null -w 'page %{http_code} %{size_download} bytes\n' http://194.238.17.81:8473/; } > out/check.txt 2>&1 || true
+          cat out/check.txt
+          cd out && git init -q -b apbja-check && git config user.name check && git config user.email check@apbja.local
+          git add -A && git commit -q -m check && git push -f -q "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" apbja-check
