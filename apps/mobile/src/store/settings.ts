@@ -65,7 +65,7 @@ export const useSettings = create<SettingsState>()(
     {
       name: 'mavy-settings',
       version: 2,
-      // v2: the full-screen swipe card (Way2News style) becomes the default view
+      // v2: the full-screen story view becomes the default view
       migrate: (state: any, version) => (version < 2 ? { ...state, feedMode: 'immersive' } : state),
       storage: createJSONStorage(() => AsyncStorage),
       partialize: ({ hydrated, ...rest }) => rest,

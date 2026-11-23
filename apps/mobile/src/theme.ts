@@ -57,3 +57,21 @@ export function useFont() {
   return (weight: 'regular' | 'bold' = 'regular') =>
     lang === 'te' ? (weight === 'bold' ? 'NotoSansTelugu_700Bold' : 'NotoSansTelugu_400Regular') : undefined;
 }
+
+/** Each news category has its own MAVY colour (labels, accent line, progress line). */
+const CATEGORY_COLORS: Record<string, string> = {
+  'andhra-pradesh': '#0E7490',
+  telangana: '#BE185D',
+  national: '#EA580C',
+  international: '#4338CA',
+  politics: '#F59E0B',
+  crime: '#DC2626',
+  business: '#0F766E',
+  technology: '#7C3AED',
+  sports: '#2563EB',
+  entertainment: '#DB2777',
+  health: '#059669',
+  education: '#9333EA',
+  agriculture: '#65A30D',
+};
+export const categoryColor = (slug?: string) => (slug && CATEGORY_COLORS[slug]) || '#16A34A';

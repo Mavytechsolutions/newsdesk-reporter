@@ -1,5 +1,5 @@
 /**
- * Page-flip story viewer (Way2News style).
+ * Page-flip story viewer (MAVY NEWS): pages turn at the middle of the screen with a green fold-line glow.
  *
  * Swipe UP:   the bottom half of the current story folds up to the middle of the screen,
  *             then the top half of the next story folds down from the middle and lands.
@@ -153,6 +153,8 @@ export function FlipDeck<T>({ items, height, renderPage, keyOf, onIndexChange, o
   const prevTopOpacity = p.interpolate({ inputRange: [0, 0.01], outputRange: [1, 0], extrapolate: 'clamp' });
   const curBottomShadeBack = p.interpolate({ inputRange: [-1, -0.5], outputRange: [0.45, 0], extrapolate: 'clamp' });
 
+  const hingeGlow = p.interpolate({ inputRange: [-1, -0.5, 0, 0.5, 1], outputRange: [0, 0.95, 0, 0.95, 0], extrapolate: 'clamp' });
+
   const shade = (o: Animated.AnimatedInterpolation<number>) => (
     <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: '#000', opacity: o }]} />
   );
@@ -204,6 +206,9 @@ export function FlipDeck<T>({ items, height, renderPage, keyOf, onIndexChange, o
         </View>
       </View>
 
+      {/* MAVY touch: a green glow along the fold line while the page turns */}
+      <Animated.View pointerEvents="none" style={[styles.hinge, { top: h2 - 2, opacity: hingeGlow }]} />
+
       {/* ---------- the live, tappable story (hidden while flipping) ---------- */}
       <View style={[StyleSheet.absoluteFill, { opacity: flipping ? 0 : 1 }]} pointerEvents={flipping ? 'none' : 'auto'} key={keyOf(cur)}>
         {renderPage(cur, index, true)}
@@ -226,5 +231,6 @@ export function EndOfStories({ text }: { text: string }) {
 
 const styles = StyleSheet.create({
   area: { position: 'absolute', left: 0, right: 0, overflow: 'visible' },
+  hinge: { position: 'absolute', left: 0, right: 0, height: 4, backgroundColor: '#16A34A', shadowColor: '#16A34A', shadowOpacity: 0.9, shadowRadius: 10, elevation: 8 },
   toast: { position: 'absolute', top: 70, alignSelf: 'center', backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 20, padding: 8, elevation: 6 },
 });

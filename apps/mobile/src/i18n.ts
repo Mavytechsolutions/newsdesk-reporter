@@ -30,7 +30,7 @@ const en = {
   report: 'Report this story', reportTitle: 'What is wrong with this story?', reportNote: 'Details (optional)', reportSend: 'Send report',
   reportThanks: 'Thank you. Our editors will review this story.',
   rFAKE: 'Fake news', rWRONG_INFO: 'Wrong information', rOFFENSIVE: 'Offensive or hateful', rCOPYRIGHT: 'Copyright problem', rPRIVACY: 'Privacy problem', rOTHER: 'Other',
-  openStory: 'Open full story',
+  openStory: 'Open full story', sendWa: 'Send',
   justNow: 'just now', minAgo: 'm ago', hrAgo: 'h ago', dayAgo: 'd ago',
 };
 
@@ -64,7 +64,7 @@ const te: typeof en = {
   report: 'ఈ వార్తపై ఫిర్యాదు', reportTitle: 'ఈ వార్తలో సమస్య ఏమిటి?', reportNote: 'వివరాలు (ఐచ్ఛికం)', reportSend: 'ఫిర్యాదు పంపండి',
   reportThanks: 'ధన్యవాదాలు. మా ఎడిటర్లు ఈ వార్తను పరిశీలిస్తారు.',
   rFAKE: 'తప్పుడు వార్త', rWRONG_INFO: 'తప్పు సమాచారం', rOFFENSIVE: 'అభ్యంతరకరం / ద్వేషపూరితం', rCOPYRIGHT: 'కాపీరైట్ సమస్య', rPRIVACY: 'గోప్యత సమస్య', rOTHER: 'ఇతర',
-  openStory: 'పూర్తి వార్త చూడండి',
+  openStory: 'పూర్తి వార్త చూడండి', sendWa: 'పంపండి',
   justNow: 'ఇప్పుడే', minAgo: 'ని. క్రితం', hrAgo: 'గం. క్రితం', dayAgo: 'రో. క్రితం',
 };
 

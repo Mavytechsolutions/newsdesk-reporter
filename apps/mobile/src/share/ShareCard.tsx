@@ -1,5 +1,5 @@
 /**
- * Sharing a story as a branded picture (like Way2News): we draw a card off-screen,
+ * Sharing a story as a branded MAVY NEWS picture: we draw a card off-screen,
  * take a picture of it, and send picture + headline + link to WhatsApp (or any app).
  * If anything fails (no WhatsApp, web preview, old phone), we fall back to sharing text.
  */

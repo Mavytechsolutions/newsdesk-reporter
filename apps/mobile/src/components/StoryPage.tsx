@@ -1,7 +1,11 @@
 /**
- * Full-screen story card (Way2News / Inshorts style): photo on top, headline, short summary,
- * time + "2 / 165", and an action bar with like, dislike, a big WhatsApp SHARE button,
- * comments, a ⋮ menu and share. Swipe up for the next story; tap the story for full text.
+ * MAVY NEWS full-screen story card (own MAVY design):
+ *  - photo with the category label and a "place · time" label on it
+ *  - a rounded story sheet that overlaps the photo, with a category-coloured accent line beside the headline
+ *  - reporter badge (initials) and a "Read full story" button
+ *  - a thin category-coloured progress line on the right edge (how far you are in the feed)
+ *  - a floating dock: green WhatsApp "Send" button, a capsule with like / dislike / comments / more, and share
+ * Tap the story to show/hide the app bars; swipe left to open the full story.
  */
 import React, { useMemo, useRef, useState } from 'react';
 import { Animated, Modal, PanResponder, Pressable, StyleSheet, TextInput, View } from 'react-native';
@@ -11,10 +15,13 @@ import { useNavigation } from '@react-navigation/native';
 import type { ArticleCard } from '../api/types';
 import { HeroImage } from './NewsCard';
 import { Button, T } from './ui';
-import { useFont, useTheme } from '../theme';
+import { categoryColor, useFont, useTheme } from '../theme';
 import { timeAgo, useName, useT } from '../i18n';
 import { useSettings } from '../store/settings';
 import { reportArticle, shareArticle, useReaction, useToggleSave } from '../api/hooks';
+
+const initials = (name?: string | null) =>
+  (name || 'MAVY').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 
 export function StoryPage({ a, height, index, total, onTap }: { a: ArticleCard; height: number; index: number; total?: number; onTap?: () => void }) {
   const th = useTheme();
@@ -24,6 +31,7 @@ export function StoryPage({ a, height, index, total, onTap }: { a: ArticleCard; 
   const [menu, setMenu] = useState(false);
   const r = useReaction(a, () => nav.navigate('Login'));
   const open = () => nav.navigate('Article', { slug: a.slug });
+  const accent = categoryColor(a.category.slug);
 
   // Swipe left on the story to open the full story (the card follows your finger a little).
   const dx = useRef(new Animated.Value(0)).current;
@@ -42,77 +50,92 @@ export function StoryPage({ a, height, index, total, onTap }: { a: ArticleCard; 
     [a.slug],
   );
   const hint = dx.interpolate({ inputRange: [-120, -30, 0], outputRange: [1, 0.3, 0] });
-  const imageH = Math.round(height * 0.42);
+  const imageH = Math.round(height * 0.46);
   const place = a.locations[0] ? name(a.locations[0]) : '';
+  const DOCK = 76;
+  const summaryLines = Math.max(3, Math.floor((height - imageH - 150 - DOCK) / 28));
+  const progress = total ? Math.min(1, (index + 1) / total) : 0;
 
   return (
     <View style={{ height, backgroundColor: th.card }}>
-      <Animated.View style={{ position: 'absolute', right: 10, top: imageH + 30, opacity: hint, alignItems: 'center' }} pointerEvents="none">
-        <Ionicons name="chevron-back-circle" size={44} color={th.green} />
-        <T bold size={12} color={th.green}>{t.readMore}</T>
+      <Animated.View style={{ position: 'absolute', right: 14, top: imageH + 40, opacity: hint, alignItems: 'center', zIndex: 2 }} pointerEvents="none">
+        <Ionicons name="chevron-back-circle" size={44} color={accent} />
+        <T bold size={12} color={accent}>{t.readMore}</T>
       </Animated.View>
+
       <Animated.View style={{ flex: 1, transform: [{ translateX: dx }] }} {...pan.panHandlers}>
-      <Pressable onPress={onTap ?? open} style={{ flex: 1 }} accessibilityRole="button" accessibilityLabel={a.headline}>
-        <View>
-          <HeroImage a={a} height={imageH} instant />
-          <View style={[styles.brand, { backgroundColor: 'rgba(11,31,58,0.88)' }]}>
-            <View style={[styles.brandIcon, { borderColor: th.green }]}><T bold size={10} color={th.green}>M</T></View>
-            <T bold size={12} color="#fff" style={{ letterSpacing: 1 }}>MAVY <T bold size={12} color={th.green}>NEWS</T></T>
-          </View>
-          {a.heroImageCredit ? <T size={9} color="rgba(255,255,255,0.8)" style={styles.credit}>{a.heroImageCredit}</T> : null}
-        </View>
-
-        <View style={styles.body}>
-          {(a.isBreaking || a.sourceType === 'CITIZEN' || place) ? (
-            <View style={styles.tags}>
-              {a.isBreaking && <View style={[styles.badge, { backgroundColor: th.red }]}><T bold size={11} color="#fff">{t.breaking}</T></View>}
-              {a.sourceType === 'CITIZEN' && <View style={[styles.badge, { backgroundColor: th.citizen }]}><T bold size={11} color="#fff">{t.citizen}</T></View>}
-              {place ? <T size={12} color={th.muted}>📍 {place} · {name(a.category)}</T> : null}
+        <Pressable onPress={onTap ?? open} style={{ flex: 1 }} accessibilityRole="button" accessibilityLabel={a.headline}>
+          {/* photo with labels on it */}
+          <View>
+            <HeroImage a={a} height={imageH} instant />
+            {a.heroImageCredit ? <T size={9} color="rgba(255,255,255,0.85)" style={styles.credit}>📷 {a.heroImageCredit}</T> : null}
+            <View style={styles.photoLabels}>
+              <View style={styles.row}>
+                <View style={[styles.catPill, { backgroundColor: accent }]}><T bold size={12} color="#fff">{name(a.category)}</T></View>
+                {a.isBreaking && <View style={[styles.catPill, { backgroundColor: th.red, marginLeft: 6 }]}><T bold size={12} color="#fff">● {t.breaking}</T></View>}
+              </View>
+              <View style={styles.glass}>
+                <Ionicons name="location-sharp" size={12} color="#fff" />
+                <T size={12} color="#fff" numberOfLines={1} style={{ marginLeft: 3, maxWidth: 150 }}>
+                  {place ? `${place} · ` : ''}{timeAgo(a.publishedAt, t)}
+                </T>
+              </View>
             </View>
-          ) : null}
-          <T bold size={20} style={{ lineHeight: 30 }} numberOfLines={3}>{a.headline}</T>
-          <T size={17} color={th.text} style={{ marginTop: 8, lineHeight: 28, opacity: 0.9 }} numberOfLines={Math.max(3, Math.floor((height - imageH - 260) / 28))}>
-            {a.summary}
-          </T>
-          <View style={styles.byline}>
-            <T size={12} color={th.muted} style={{ flex: 1 }} numberOfLines={1}>
-              {a.reporter ? `✍ ${a.reporter} · ` : ''}{a.sourceLabel}
-            </T>
-            <Pressable onPress={open} hitSlop={10} accessibilityRole="link" style={styles.readMore}>
-              <T bold size={13} color={th.green}>{t.readMore}</T>
-              <Ionicons name="chevron-forward" size={15} color={th.green} />
-            </Pressable>
           </View>
-        </View>
-      </Pressable>
+
+          {/* rounded story sheet overlapping the photo */}
+          <View style={[styles.storySheet, { backgroundColor: th.card }]}>
+            {a.sourceType === 'CITIZEN' && (
+              <View style={[styles.citizen, { borderColor: th.citizen }]}><T bold size={11} color={th.citizen}>👥 {t.citizen}</T></View>
+            )}
+            <View style={styles.headRow}>
+              <View style={[styles.accentBar, { backgroundColor: accent }]} />
+              <T bold size={20} style={{ lineHeight: 30, flex: 1 }} numberOfLines={3}>{a.headline}</T>
+            </View>
+            <T size={16.5} color={th.text} style={{ marginTop: 8, lineHeight: 28, opacity: 0.88 }} numberOfLines={summaryLines}>
+              {a.summary}
+            </T>
+            <View style={styles.byline}>
+              <View style={[styles.avatar, { backgroundColor: accent }]}><T bold size={12} color="#fff">{initials(a.reporter)}</T></View>
+              <View style={{ flex: 1, marginLeft: 8 }}>
+                <T bold size={12.5} numberOfLines={1}>{a.reporter || 'MAVY NEWS'}</T>
+                <T size={11} color={th.muted} numberOfLines={1}>{a.sourceLabel}</T>
+              </View>
+              <Pressable onPress={open} hitSlop={8} accessibilityRole="link" style={[styles.readPill, { borderColor: accent }]}>
+                <T bold size={12.5} color={accent}>{t.readMore}</T>
+                <Ionicons name="arrow-forward" size={14} color={accent} style={{ marginLeft: 3 }} />
+              </Pressable>
+            </View>
+          </View>
+        </Pressable>
       </Animated.View>
 
-      <View style={styles.infoRow}>
-        <Ionicons name="time-outline" size={16} color={th.muted} />
-        <T size={13} color={th.muted} style={{ marginLeft: 4, maxWidth: '35%' }} numberOfLines={1}>
-          {timeAgo(a.publishedAt, t)}
-        </T>
-        <View style={{ flex: 1 }} />
-        {total ? <T size={13} color={th.muted} style={{ maxWidth: '35%', textAlign: 'right' }} numberOfLines={1}><T bold size={13}>{index + 1}</T> {t.of} {total} {t.pages}</T> : null}
-      </View>
-
-      <View style={[styles.bar, { borderTopColor: th.border, backgroundColor: th.card }]}>
-        <BarBtn icon={r.liked ? 'thumbs-up' : 'thumbs-up-outline'} color={r.liked ? th.green : th.text} label={t.like} count={r.likeCount} onPress={r.like} />
-        <BarBtn icon={r.disliked ? 'thumbs-down' : 'thumbs-down-outline'} color={r.disliked ? th.red : th.text} label={t.dislike} count={r.dislikeCount} onPress={r.dislike} />
-        <View style={styles.centerSlot}>
-          <Pressable onPress={() => shareArticle(a, 'whatsapp')} accessibilityRole="button" accessibilityLabel={t.whatsapp}
-            style={({ pressed }) => [styles.wa, { borderColor: th.card, transform: [{ scale: pressed ? 0.94 : 1 }] }]}>
-            <Ionicons name="logo-whatsapp" size={34} color="#fff" />
-          </Pressable>
-          <T bold size={11} color={th.muted} style={{ marginTop: 2 }}>{t.share.toUpperCase()}</T>
+      {/* progress line on the right edge */}
+      {total ? (
+        <View style={[styles.rail, { top: imageH + 24, bottom: DOCK + 8, backgroundColor: th.border }]} pointerEvents="none">
+          <View style={{ height: `${progress * 100}%`, backgroundColor: accent, borderRadius: 2 }} />
         </View>
-        <BarBtn icon="chatbox-ellipses-outline" color={th.text} label={t.comments} count={a.commentCount}
-          onPress={() => nav.navigate('Comments', { articleId: a.id, headline: a.headline })} />
-        <Pressable onPress={() => setMenu(true)} hitSlop={8} accessibilityRole="button" accessibilityLabel={t.more} style={styles.dots}>
-          <Ionicons name="ellipsis-vertical" size={20} color={th.muted} />
+      ) : null}
+
+      {/* floating action dock */}
+      <View style={styles.dock}>
+        <Pressable onPress={() => shareArticle(a, 'whatsapp')} accessibilityRole="button" accessibilityLabel={t.whatsapp}
+          style={({ pressed }) => [styles.waPill, { opacity: pressed ? 0.85 : 1 }]}>
+          <Ionicons name="logo-whatsapp" size={22} color="#fff" />
+          <T bold size={14} color="#fff" style={{ marginLeft: 6 }}>{t.sendWa}</T>
         </Pressable>
-        <Pressable onPress={() => shareArticle(a)} hitSlop={8} accessibilityRole="button" accessibilityLabel={t.share} style={styles.dots}>
-          <Ionicons name="arrow-redo" size={26} color="#1E88E5" />
+        <View style={[styles.capsule, { backgroundColor: th.chip }]}>
+          <DockBtn icon={r.liked ? 'heart' : 'heart-outline'} color={r.liked ? '#E11D48' : th.text} label={t.like} count={r.likeCount} onPress={r.like} />
+          <DockBtn icon={r.disliked ? 'heart-dislike' : 'heart-dislike-outline'} color={r.disliked ? th.muted : th.text} label={t.dislike} count={r.dislikeCount} onPress={r.dislike} />
+          <DockBtn icon="chatbubble-ellipses-outline" color={th.text} label={t.comments} count={a.commentCount}
+            onPress={() => nav.navigate('Comments', { articleId: a.id, headline: a.headline })} />
+          <Pressable onPress={() => setMenu(true)} hitSlop={8} accessibilityRole="button" accessibilityLabel={t.more} style={styles.dockBtn}>
+            <Ionicons name="ellipsis-horizontal" size={20} color={th.text} />
+          </Pressable>
+        </View>
+        <Pressable onPress={() => shareArticle(a)} hitSlop={6} accessibilityRole="button" accessibilityLabel={t.share}
+          style={({ pressed }) => [styles.shareBtn, { backgroundColor: th.navy, opacity: pressed ? 0.85 : 1 }]}>
+          <Ionicons name="paper-plane" size={18} color="#fff" />
         </Pressable>
       </View>
 
@@ -121,12 +144,12 @@ export function StoryPage({ a, height, index, total, onTap }: { a: ArticleCard; 
   );
 }
 
-function BarBtn({ icon, color, label, count, onPress }: { icon: any; color: string; label: string; count: number; onPress: () => void }) {
+function DockBtn({ icon, color, label, count, onPress }: { icon: any; color: string; label: string; count: number; onPress: () => void }) {
   const th = useTheme();
   return (
-    <Pressable onPress={onPress} hitSlop={6} accessibilityRole="button" accessibilityLabel={`${label} ${count}`} style={styles.barBtn}>
-      <Ionicons name={icon} size={24} color={color} />
-      <T size={14} color={th.muted} style={{ marginLeft: 5 }}>{count > 0 ? compact(count) : ''}</T>
+    <Pressable onPress={onPress} hitSlop={6} accessibilityRole="button" accessibilityLabel={`${label} ${count}`} style={styles.dockBtn}>
+      <Ionicons name={icon} size={21} color={color} />
+      {count > 0 ? <T size={12} color={th.muted} style={{ marginLeft: 3 }}>{compact(count)}</T> : null}
     </Pressable>
   );
 }
@@ -213,20 +236,24 @@ function ReportForm({ a, onDone }: { a: ArticleCard; onDone: () => void }) {
 }
 
 const styles = StyleSheet.create({
-  brand: { position: 'absolute', left: 0, bottom: 0, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4, borderTopRightRadius: 6 },
-  brandIcon: { borderWidth: 1.5, borderRadius: 3, width: 16, height: 16, alignItems: 'center', justifyContent: 'center', marginRight: 6 },
-  credit: { position: 'absolute', right: 6, bottom: 4, textShadowColor: '#000', textShadowRadius: 3 },
-  body: { paddingHorizontal: 16, paddingTop: 12, flex: 1 },
-  tags: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginBottom: 6 },
-  badge: { paddingHorizontal: 7, paddingVertical: 1, borderRadius: 4 },
-  byline: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
-  readMore: { flexDirection: 'row', alignItems: 'center', marginLeft: 8 },
-  infoRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 14 },
-  bar: { flexDirection: 'row', alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth, height: 62, paddingHorizontal: 8 },
-  barBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, minWidth: 64 },
-  centerSlot: { flex: 1, alignItems: 'center', marginTop: -34 },
-  wa: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#25D366', alignItems: 'center', justifyContent: 'center', borderWidth: 4, elevation: 4, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
-  dots: { paddingHorizontal: 8, paddingVertical: 6 },
+  row: { flexDirection: 'row', alignItems: 'center' },
+  credit: { position: 'absolute', right: 8, top: 8, textShadowColor: '#000', textShadowRadius: 3 },
+  photoLabels: { position: 'absolute', left: 12, right: 12, bottom: 30, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  catPill: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 14 },
+  glass: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.45)', paddingHorizontal: 9, paddingVertical: 4, borderRadius: 14 },
+  storySheet: { marginTop: -20, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingHorizontal: 18, paddingTop: 16, flex: 1 },
+  citizen: { alignSelf: 'flex-start', borderWidth: 1, borderRadius: 10, paddingHorizontal: 8, marginBottom: 6 },
+  headRow: { flexDirection: 'row', alignItems: 'stretch' },
+  accentBar: { width: 4, borderRadius: 2, marginRight: 10, marginVertical: 4 },
+  byline: { flexDirection: 'row', alignItems: 'center', marginTop: 12 },
+  avatar: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  readPill: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderRadius: 16, paddingHorizontal: 10, paddingVertical: 4 },
+  rail: { position: 'absolute', right: 4, width: 3, borderRadius: 2, overflow: 'hidden' },
+  dock: { position: 'absolute', left: 12, right: 12, bottom: 12, flexDirection: 'row', alignItems: 'center' },
+  waPill: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1FAF54', borderRadius: 24, paddingHorizontal: 14, height: 46, elevation: 3, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } },
+  capsule: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', borderRadius: 24, height: 46, marginHorizontal: 8 },
+  dockBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4, paddingVertical: 6 },
+  shareBtn: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' },
   sheet: { padding: 20, paddingBottom: 32, borderTopLeftRadius: 20, borderTopRightRadius: 20 },
   grabber: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: 12 },
