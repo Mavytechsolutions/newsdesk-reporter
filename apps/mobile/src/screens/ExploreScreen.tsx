@@ -70,6 +70,7 @@ export function ExploreScreen({ navigation, route }: any) {
       {showResults ? (
         <FeedList
           query={results}
+          mode="immersive"
           empty={
             <EmptyState icon="search-outline" title={t.noResults}
               action={didYouMean ? { title: `${t.didYouMean}: ${didYouMean}?`, onPress: () => run(didYouMean) } : undefined} />

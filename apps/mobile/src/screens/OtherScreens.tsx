@@ -4,7 +4,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import Constants from 'expo-constants';
-import { NewsCard } from '../components/NewsCard';
+import { FlipDeck } from '../components/FlipDeck';
+import { StoryPage } from '../components/StoryPage';
 import { Button, Chip, EmptyState, ErrorState, FeedSkeleton, T } from '../components/ui';
 import { useCategories, useHistory, useMe } from '../api/hooks';
 import { api, logout, saveLogin, useAuth, ApiError, serverUrl, switchServer, testServer } from '../api/client';
@@ -19,16 +20,18 @@ export function BookmarksScreen({ navigation }: any) {
   const t = useT();
   const insets = useSafeAreaInsets();
   const saved = useSettings((s) => s.saved);
+  const [h, setH] = useState(0);
   return (
     <View style={{ flex: 1, backgroundColor: th.bg, paddingTop: insets.top }}>
-      <T bold size={22} style={{ padding: 16, paddingBottom: 4 }}>{t.bookmarks}</T>
-      <FlatList
-        data={saved}
-        keyExtractor={(a) => a.id}
-        contentContainerStyle={{ paddingTop: 8, flexGrow: 1 }}
-        renderItem={({ item }) => <NewsCard a={item} onPress={() => navigation.navigate('Article', { slug: item.slug })} />}
-        ListEmptyComponent={<EmptyState icon="bookmark-outline" title={t.savedEmpty} hint={t.savedEmptyHint} />}
-      />
+      <T bold size={22} style={{ paddingHorizontal: 16, paddingVertical: 8 }}>{t.bookmarks}</T>
+      <View style={{ flex: 1 }} onLayout={(e) => setH(Math.round(e.nativeEvent.layout.height))}>
+        {saved.length ? (
+          <FlipDeck items={saved} height={h} keyOf={(a) => a.id}
+            renderPage={(a, i) => <StoryPage a={a} height={h} index={i} total={saved.length} />} />
+        ) : (
+          <EmptyState icon="bookmark-outline" title={t.savedEmpty} hint={t.savedEmptyHint} />
+        )}
+      </View>
     </View>
   );
 }
@@ -319,17 +322,19 @@ export function HistoryScreen({ navigation }: any) {
   const th = useTheme();
   const t = useT();
   const q = useHistory();
+  const [h, setH] = useState(0);
   if (q.isPending) return <FeedSkeleton />;
   if (q.isError) return <ErrorState error={q.error} onRetry={() => q.refetch()} />;
+  const list = q.data ?? [];
   return (
-    <FlatList
-      style={{ backgroundColor: th.bg }}
-      data={q.data}
-      keyExtractor={(a) => a.id}
-      contentContainerStyle={{ paddingTop: 12, flexGrow: 1 }}
-      renderItem={({ item }) => <NewsCard a={item} onPress={() => navigation.navigate('Article', { slug: item.slug })} />}
-      ListEmptyComponent={<EmptyState icon="time-outline" title={t.history} hint={t.historyEmpty} />}
-    />
+    <View style={{ flex: 1, backgroundColor: th.bg }} onLayout={(e) => setH(Math.round(e.nativeEvent.layout.height))}>
+      {list.length ? (
+        <FlipDeck items={list} height={h} keyOf={(a) => a.id} onRefresh={() => { q.refetch(); }} refreshing={q.isRefetching}
+          renderPage={(a, i) => <StoryPage a={a} height={h} index={i} total={list.length} />} />
+      ) : (
+        <EmptyState icon="time-outline" title={t.history} hint={t.historyEmpty} />
+      )}
+    </View>
   );
 }
 

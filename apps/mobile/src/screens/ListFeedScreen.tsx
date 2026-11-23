@@ -22,5 +22,10 @@ export function ListFeedScreen({ route, navigation }: any) {
       ))}
     </ScrollView>
   ) : undefined;
-  return <View style={{ flex: 1, backgroundColor: th.bg }}><FeedList query={q} header={header} /></View>;
+  return (
+    <View style={{ flex: 1, backgroundColor: th.bg }}>
+      {header ? <View style={{ paddingTop: 8 }}>{header}</View> : null}
+      <FeedList query={q} mode="immersive" />
+    </View>
+  );
 }
