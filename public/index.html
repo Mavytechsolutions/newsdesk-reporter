@@ -104,6 +104,37 @@ input:focus,select:focus,textarea:focus,button:focus-visible{outline:3px solid c
 .login-card{background:var(--card);margin:-36px 16px 0;border-radius:20px;padding:18px;box-shadow:0 14px 34px rgba(0,0,0,.14);position:relative;z-index:2;border:1px solid var(--line)}
 .otp{display:flex;gap:10px;justify-content:center}.otp input{width:58px;height:62px;text-align:center;font-size:26px;font-weight:800;padding:0}
 @media(prefers-reduced-motion:no-preference){.toast{animation:up .25s ease}@keyframes up{from{opacity:0;transform:translate(-50%,10px)}}}
+
+/* ---- professional polish ---- */
+.btn{box-shadow:0 1px 0 rgba(0,0,0,.04),0 6px 14px -6px rgba(214,0,28,.55);transition:transform .08s ease,box-shadow .15s ease,background .15s ease;letter-spacing:.005em}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.55;box-shadow:none}
+.btn.ghost{background:var(--card);color:var(--ink);border:1.5px solid var(--line);box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.btn.ghost:active{background:var(--chip)}
+.btn.danger{background:var(--card);color:var(--red);border:1.5px solid color-mix(in srgb,var(--red) 35%,transparent);box-shadow:none}
+.btn.wa{background:#1f9d55;box-shadow:0 6px 14px -6px rgba(31,157,85,.6)}
+.btn.sm{min-height:44px;border-radius:12px;font-size:15px;padding:8px 14px}
+.ib{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;border:1.5px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;flex:none;text-decoration:none}
+.ib svg{width:20px;height:20px}.ib.wa{color:#1a8a4a;border-color:#bfe5cd;background:#f1faf4}.ib.call{color:var(--red);border-color:color-mix(in srgb,var(--red) 25%,transparent);background:var(--redsoft)}
+.ib:active{transform:scale(.95)}
+.pt{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}.pt svg{width:14px;height:14px;flex:none}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:4px}
+.tile{display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:14px;border-radius:16px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;text-align:left;cursor:pointer;min-height:118px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.tile:active{transform:scale(.98)}
+.tile .ic{width:42px;height:42px;border-radius:12px;background:var(--redsoft);color:var(--red);display:grid;place-items:center}.tile .ic svg{width:22px;height:22px}
+.tile b{font-size:15.5px;line-height:1.2}.tile span.mut{font-size:13px;line-height:1.3}
+.tile.dark .ic{background:var(--ink);color:var(--card)}
+nav.tabs{box-shadow:0 -6px 20px rgba(0,0,0,.05)}
+nav.tabs button.on svg{background:var(--redsoft);border-radius:12px;padding:3px 12px;width:48px;height:30px}
+nav.tabs svg{padding:3px 12px;width:48px;height:30px;box-sizing:border-box}
+.it .tx .mut{line-height:1.35}
+.card{box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.act{box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.composer{position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:10px 12px;display:flex;gap:8px;align-items:flex-end}
+.composer textarea{min-height:48px;max-height:140px;flex:1;border-radius:24px;padding:12px 16px}
+.composer .btn{width:52px;min-height:48px;margin:0;border-radius:50%;padding:0;flex:none}
+.av.muted{background:var(--chip);color:var(--mut)}
+.sec{font-size:13px;font-weight:700;color:var(--mut);margin:22px 0 8px;letter-spacing:.02em}
 </style>
 </head>
 <body>
@@ -158,8 +189,9 @@ const canManage=(v,m)=>v.admin||(isPres(v)&&v.district===m.district&&m.id!==v.id
 const canApproveRemoval=(v,m)=>v.admin||(!!v.head&&v.head.districts.includes(m.district)&&!(m.delReq&&m.delReq.by===v.id));
 const removalsFor=v=>approved().filter(m=>m.delReq&&canApproveRemoval(v,m));
 const wa=p=>'https://wa.me/91'+p;
-const contactBtns=(m,v,big)=>{const dm=v&&m.id!==v.id&&dmPeople(v).some(x=>x.id===m.id);const c=big?'btn grow':'btn sm ghost';
-  return (m.phone?`<a class="${c} ${big?'ghost':''}" href="tel:+91${esc(m.phone)}" aria-label="Call ${esc(m.name)}">${ic('phone')}${big?' Call':''}</a><a class="${c} wa" href="${wa(m.phone)}" target="_blank" rel="noopener" aria-label="WhatsApp ${esc(m.name)}">${ic('wa')}${big?' WhatsApp':''}</a>`:'')+(dm?`<button class="${c} ${big?'':''}" data-act="thread" data-id="${m.id}" aria-label="Message ${esc(m.name)} in the app">${ic('msg')}${big?' Message':''}</button>`:'')};
+const pt=p=>p?`<span class="pt">${ic('phone')}${esc(ph5(p))}</span>`:'';
+const contactBtns=(m,v,big)=>{const dm=v&&m.id!==v.id&&dmPeople(v).some(x=>x.id===m.id);if(!big)return (m.phone?`<a class="ib call" href="tel:+91${esc(m.phone)}" aria-label="Call ${esc(m.name)}">${ic('phone')}</a><a class="ib wa" href="${wa(m.phone)}" target="_blank" rel="noopener" aria-label="WhatsApp ${esc(m.name)}">${ic('wa')}</a>`:'')+(dm?`<button class="ib" data-act="thread" data-id="${m.id}" aria-label="Message ${esc(m.name)} in the app">${ic('msg')}</button>`:'');
+  return (m.phone?`<a class="btn grow ghost" href="tel:+91${esc(m.phone)}">${ic('phone')} Call</a><a class="btn grow wa" href="${wa(m.phone)}" target="_blank" rel="noopener">${ic('wa')} WhatsApp</a>`:'')+(dm?`<button class="btn grow" data-act="thread" data-id="${m.id}">${ic('msg')} Message</button>`:'')};
 const canApprove=(v,m)=>v.admin||(isPres(v)&&v.district===m.district);
 const pendingFor=v=>S.members.filter(m=>m.status==='pending'&&canApprove(v,m));
 function leaders(v){
@@ -255,14 +287,17 @@ function home(){
   ${removalsFor(v).length?`<button class="act alert" data-act="open" data-v="removals" style="background:#15171c"><span class="ic">${ic('trash')}</span><span class="grow"><b>${removalsFor(v).length} removal ${removalsFor(v).length===1?'request':'requests'}</b><span class="mut">A President wants to remove a member. Tap to decide.</span></span><span class="chev">›</span></button>`:''}
   ${!v.photo?`<label class="act photo-pick" style="cursor:pointer"><input type="file" accept="image/*" data-photo="me"><span class="ic">${ic('camera')}</span><span class="grow"><b>Add your profile photo</b><span class="mut">It appears on your ID card</span></span><span class="ph" style="display:none"></span><span class="chev">›</span></label>`:''}
   ${pend.length?`<button class="act alert" data-act="tab" data-v="members"><span class="ic">${ic('check')}</span><span class="grow"><b>${pend.length} new ${pend.length===1?'member is':'members are'} waiting</b><span class="mut">Tap to approve</span></span><span class="chev">›</span></button>`:''}
-  ${L?`<button class="act" data-act="tab" data-v="send"><span class="ic">${ic('send')}</span><span class="grow"><b>Send a message</b><span class="mut">${v.admin||v.head?'To all districts, chosen districts, Presidents or people':'To your whole team or chosen people'}</span></span><span class="chev">›</span></button>
-  <button class="act" data-act="tab" data-v="members"><span class="ic">${ic('team')}</span><span class="grow"><b>${v.admin||v.head?'Districts and members':'My team'}</b><span class="mut">${v.admin?'Set Presidents, give designations':'Give designations to your members'}</span></span><span class="chev">›</span></button>
-  ${v.admin?`<button class="act" data-act="open" data-v="heads"><span class="ic">${ic('star')}</span><span class="grow"><b>Heads and In-charges</b><span class="mut">Head of all Presidents, Rayalaseema and other In-charges</span></span><span class="chev">›</span></button>`:''}
-  <button class="act" data-act="tab" data-v="idcard"><span class="ic">${ic('card')}</span><span class="grow"><b>My ID card</b><span class="mut">APBJA-${esc(v.mid)}</span></span><span class="chev">›</span></button>`:''}
-  <button class="act" data-act="${L?'open':'tab'}" data-v="committees"><span class="ic">${ic('star')}</span><span class="grow"><b>District committees</b><span class="mut">Presidents and office-bearers of every district</span></span><span class="chev">›</span></button>
+  <div class="sec">QUICK ACTIONS</div><div class="grid2">
+  ${L?`<button class="tile" data-act="tab" data-v="send"><span class="ic">${ic('send')}</span><span><b>Send message</b><span class="mut" style="display:block;margin-top:3px">${v.admin||v.head?'Districts, Presidents or people':'Your team or chosen people'}</span></span></button>
+  <button class="tile" data-act="tab" data-v="members"><span class="ic">${ic('team')}</span><span><b>${v.admin||v.head?'Districts':'My team'}</b><span class="mut" style="display:block;margin-top:3px">${v.admin?'Presidents, designations':'Approve and give posts'}</span></span></button>
+  ${v.admin?`<button class="tile" data-act="open" data-v="heads"><span class="ic">${ic('check')}</span><span><b>Heads and In-charges</b><span class="mut" style="display:block;margin-top:3px">Choose who leads</span></span></button>`:''}`:''}
+  <button class="tile" data-act="${L?'open':'tab'}" data-v="committees"><span class="ic">${ic('star')}</span><span><b>Committees</b><span class="mut" style="display:block;margin-top:3px">Every district’s office-bearers</span></span></button>
+  ${L&&!v.admin?`<button class="tile" data-act="tab" data-v="idcard"><span class="ic">${ic('card')}</span><span><b>My ID card</b><span class="mut" style="display:block;margin-top:3px">APBJA-${esc(v.mid)}</span></span></button>`:''}
+  ${!L?`<button class="tile" data-act="tab" data-v="inbox"><span class="ic">${ic('inbox')}</span><span><b>Notices</b><span class="mut" style="display:block;margin-top:3px">${unread(v)?unread(v)+' unread':'All messages'}</span></span></button>`:''}
   </div>
-  ${lead.length?`<h3>My leaders <small>tap number to call</small></h3><div class="list">${lead.map(x=>`<div class="it" style="cursor:default">${av(x,'sm')}<span class="tx"><b>${esc(x.name)}</b><span class="mut">${esc(role(x))}</span>${x.phone?`<a class="call" href="tel:+91${esc(x.phone)}">📞 ${esc(ph5(x.phone))}</a>`:'<span class="mut">No number yet</span>'}</span><span class="row" style="gap:6px;flex:none">${contactBtns(x,v,false)}</span></div>`).join('')}</div>`:''}
-  <h3>Latest notices ${ns.length?`<small><a href="#" data-act="tab" data-v="inbox" style="color:var(--red)">See all</a></small>`:''}</h3>${ns.length?ns.slice(0,3).map(noticeCard).join(''):'<p class="mut">No notices yet.</p>'}
+  </div>
+  ${lead.length?`<div class="sec">MY LEADERS</div><div class="card list" style="padding:2px 12px">${lead.map(x=>`<div class="it" style="cursor:default">${av(x,'sm')}<span class="tx"><b>${esc(x.name||'+91 '+ph5(x.phone))}</b><span class="mut">${esc(role(x))}</span>${x.phone?`<span class="mut">${pt(x.phone)}</span>`:''}</span><span class="row" style="gap:6px;flex:none">${contactBtns(x,v,false)}</span></div>`).join('')}</div>`:''}
+  <div class="sec" style="display:flex;justify-content:space-between">LATEST NOTICES ${ns.length?`<a href="#" data-act="tab" data-v="inbox" style="color:var(--red);letter-spacing:0">See all</a>`:''}</div>${ns.length?ns.slice(0,3).map(noticeCard).join(''):'<p class="mut">No notices yet.</p>'}
   </main>`+tabs();
 }
 function noticeCard(x){
@@ -299,7 +334,7 @@ function send(){
   let extra='';
   if(V.sm==='districts')extra=`<label class="f">Districts</label><div class="chips">${sc.filter(d=>distCounts(d)||V.sd.includes(d)).concat(v.admin?[]:[]).map(d=>`<label class="${V.sd.includes(d)?'on':''}"><input type="checkbox" data-sd="${esc(d)}" ${V.sd.includes(d)?'checked':''}>${esc(d)} <span class="mut">${distCounts(d)}</span></label>`).join('')}</div>
     ${sc.some(d=>!distCounts(d))?`<p class="mut">Districts with no members yet are hidden.</p>`:''}
-    <label class="f">Who in those districts</label><div class="seg">${[['all','Everyone'],['presidents','Presidents'],['office','Office-bearers']].map(([k,l])=>`<button type="button" data-act="sdo" data-t="${k}" class="${V.sdo===k?'on':''}">${l}</button>`).join('')}</div>`;
+    <label class="f">Who in those districts</label><div class="seg">${[['all','Everyone'],['presidents','Presidents'],['office','Office']].map(([k,l])=>`<button type="button" data-act="sdo" data-t="${k}" class="${V.sdo===k?'on':''}">${l}</button>`).join('')}</div>`;
   if(V.sm==='pick')extra=`<label class="f" for="spq">Search people</label><input id="spq" data-spq value="${esc(V.spq)}" placeholder="Name, channel, district, post">
     ${V.sp.length?`<div class="chips">${V.sp.map(id=>Mb(id)).filter(Boolean).map(m=>`<label class="on"><input type="checkbox" data-sp="${m.id}" checked>${esc(m.name)}</label>`).join('')}</div>`:''}
     <div class="list" id="spl">${pool.filter(m=>!V.sp.includes(m.id)&&(!q||(m.name+' '+m.org+' '+m.district+' '+role(m)).toLowerCase().includes(q))).sort((a,b)=>rank(a)-rank(b)).slice(0,40).map(m=>`<label class="it">${av(m,'sm')}<span class="tx"><b>${esc(m.name)}</b><span class="mut">${esc(role(m))}</span></span><input type="checkbox" data-sp="${m.id}" style="width:24px;height:24px;min-height:0;accent-color:var(--red)"></label>`).join('')}</div>`;
@@ -323,7 +358,7 @@ function members(){
   return bar(v.admin?'Districts':'My districts',v.admin?'Tap a district to set its President':'Districts under you',false)+`<main>
   <input data-q placeholder="Search any member: name, channel, mobile" value="${esc(V.q)}" aria-label="Search members">
   ${q?`<div class="list">${found.map(m=>person(m)).join('')||'<p class="mut" style="margin-top:10px">Nobody found.</p>'}</div>`:
-  `<div class="list" style="margin-top:6px">${rows.map(r=>`<button class="it" data-act="district" data-d="${esc(r.d)}"><span class="av sm" style="background:${r.p?'var(--red)':'var(--chip)'};color:${r.p?'#fff':'var(--mut)'}">${r.n}</span><span class="tx"><b>${esc(r.d)}</b><span class="mut">${r.p?'President: '+esc(r.p.name):'No President yet'+(v.admin?' — tap to set':'')}</span></span>${r.w?`<span class="badge">${r.w}</span>`:''}<span class="chev">›</span></button>`).join('')}</div>`}
+  `<div class="list" style="margin-top:6px">${rows.map(r=>`<button class="it" data-act="district" data-d="${esc(r.d)}"><span class="av sm ${r.n?'':'muted'}">${r.n||ic('map').replace('<svg','<svg width="18" height="18"')}</span><span class="tx"><b>${esc(r.d)}</b><span class="mut">${r.p?'President: '+esc(r.p.name):'No President yet'+(v.admin?' — tap to set':'')}</span></span>${r.w?`<span class="badge">${r.w}</span>`:''}<span class="chev">›</span></button>`).join('')}</div>`}
   ${q?'':`<div class="card" style="margin-top:12px"><b>Download members list</b><p class="mut" style="margin:2px 0 10px">${v.admin?'Every district':'All your districts'} in one file</p><div class="row"><button class="btn sm" data-act="export" data-fmt="xlsx" data-d="" style="flex:1;background:#1d6f42">${ic('dl')} Excel</button><button class="btn sm" data-act="export" data-fmt="pdf" data-d="" style="flex:1">${ic('dl')} PDF</button></div></div>`}</main>`+tabs();
 }
 function district(own){
@@ -332,10 +367,10 @@ function district(own){
   const mgr=v.admin||(isPres(v)&&v.district===d);
   return bar(own?'My team':d,(own?d+' · ':'')+ms.length+(ms.length===1?' member':' members'),!own)+`<main>
   ${pend.length?`<h3 style="margin-top:4px">Waiting for approval <small>${pend.length}</small></h3>`+pend.map(m=>`<div class="card" style="border:2px solid var(--red)"><div class="row">${av(m)}<div class="grow"><b style="font-size:18px">${esc(m.name)}</b><div class="mut">${esc(m.job)} · ${esc(m.org)}</div></div></div>
-    <p class="mut" style="margin:10px 0 0">📞 ${esc(ph5(m.phone))} · ${esc(m.area)}<br>${esc(m.address)}</p>
-    <div class="row" style="margin-top:12px"><button class="btn sm grow" data-act="approve" data-id="${m.id}" style="flex:2">✓ Approve</button><button class="btn sm ghost grow" data-act="reject" data-id="${m.id}">Reject</button></div></div>`).join(''):''}
+    <p class="mut" style="margin:10px 0 0">${pt(m.phone)} · ${esc(m.area)}<br>${esc(m.address)}</p>
+    <div class="row" style="margin-top:12px"><button class="btn sm grow" data-act="approve" data-id="${m.id}" style="flex:2">${ic('check')} Approve</button><button class="btn sm ghost grow" data-act="reject" data-id="${m.id}">Reject</button></div></div>`).join(''):''}
   <h3 style="${pend.length?'':'margin-top:4px'}">District President</h3>
-  <div class="card">${p?`<div class="row">${av(p)}<div class="grow"><b>${esc(p.name||'(name not added yet)')}</b><div class="mut">📞 ${esc(ph5(p.phone))}${p.org?' · '+esc(p.org):''}</div></div></div>`:`<p class="mut" style="margin:0">No President yet. New members of ${esc(d)} need a President to approve them.</p>`}
+  <div class="card">${p?`<div class="row">${av(p)}<div class="grow"><b>${esc(p.name||'(name not added yet)')}</b><div class="mut">${pt(p.phone)}${p.org?' · '+esc(p.org):''}</div></div></div>`:`<p class="mut" style="margin:0">No President yet. New members of ${esc(d)} need a President to approve them.</p>`}
   ${v.admin?`<form data-form="setpres" style="margin-top:10px"><label class="f" for="pp">${p?'Change President — mobile number':'Make President — mobile number'}</label><div class="row"><input id="pp" name="ph" inputmode="numeric" maxlength="10" placeholder="10-digit number" required><button class="btn sm">Set</button></div><p class="mut" style="margin:6px 0 0">Works for anyone. If the number is new, they add their details at first login.</p></form>`:''}</div>
   <h3>Office-bearers <small>${mgr?'tap to change':''}</small></h3>
   <div class="card" style="padding:4px 14px">${SLOTS.map(s=>{const h=ms.find(m=>m.post===s.p&&m.no===s.no);return `<button class="slot ${h?'':'vac'}" data-act="${h?'member':mgr?'slot':''}" data-id="${h?h.id:''}" data-p="${esc(s.p)}" data-n="${s.no}"><span><span class="p">${esc(s.label)}</span><b>${h?esc(h.name):mgr?'Vacant — tap to choose':'Vacant'}</b></span>${h?av(h,'sm'):'<span class="chev">+</span>'}</button>`}).join('')}</div>
@@ -368,9 +403,9 @@ function member(){
     <label class="f" for="e4">District</label><select id="e4" name="district">${DISTRICTS.map(d=>`<option ${m.district===d?'selected':''}>${d}</option>`).join('')}</select>
     <label class="f" for="e5">Area</label><input id="e5" name="area" value="${esc(m.area)}">
     <button class="btn ghost">Save details</button></form>
-    <button class="btn ghost" data-act="remove" data-id="${m.id}" style="color:var(--red)">${ic('trash')} Remove this member</button>`:''}
+    <button class="btn danger" data-act="remove" data-id="${m.id}" style="color:var(--red)">${ic('trash')} Remove this member</button>`:''}
   ${isPres(v)&&!v.admin&&mg&&!m.delReq?`<h3>Remove member</h3><form data-form="delreq" class="card"><p class="mut" style="margin-top:0">The In-charge for ${esc(m.district)} must approve before the member is removed.</p>
-    <label class="f" for="dr">Reason</label><input id="dr" name="reason" placeholder="e.g. Left the profession" required><button class="btn ghost" style="color:var(--red)">${ic('trash')} Ask to remove</button></form>`:''}</main>`;
+    <label class="f" for="dr">Reason</label><input id="dr" name="reason" placeholder="e.g. Left the profession" required><button class="btn danger">${ic('trash')} Ask to remove</button></form>`:''}</main>`;
 }
 function removals(){
   const v=me(),l=removalsFor(v);
@@ -389,7 +424,7 @@ function heads(){
   const top=approved().find(m=>m.head&&m.head.title===ROLES[0].title),inch=approved().filter(m=>m.head&&m.head.title!==ROLES[0].title);
   return bar('Heads and In-charges','Chosen by the admin')+`<main>
   <div class="card" style="${top?'':'border:2px dashed var(--line)'}"><span class="mut">${esc(ROLES[0].sub)}</span><h3 style="margin:2px 0 10px">${esc(ROLES[0].title)}</h3>
-    ${top?`<div class="row">${av(top)}<div class="grow"><b>${esc(top.name)}</b><div class="mut">${esc(top.org)} · 📞 ${esc(ph5(top.phone))}</div></div></div>`:'<p class="mut" style="margin:0">Not selected yet</p>'}
+    ${top?`<div class="row">${av(top)}<div class="grow"><b>${esc(top.name)}</b><div class="mut">${esc(top.org)} · ${pt(top.phone)}</div></div></div>`:'<p class="mut" style="margin:0">Not selected yet</p>'}
     <button class="btn ${top?'ghost':''}" data-act="preset" data-k="all">${top?'Change person':'Choose person'}</button></div>
   <h3>In-charges <small>${inch.length}</small></h3>
   <p class="mut">An In-charge looks after the districts you give them: messages, and approving a President's request to remove a member.</p>
@@ -410,7 +445,7 @@ function committees(){
   const match=m=>!q||(m.name+' '+m.org+' '+m.phone+' '+m.district+' '+postName(m)).toLowerCase().includes(q);
   const hs=approved().filter(m=>m.head&&match(m)).sort((a,b)=>b.head.districts.length-a.head.districts.length);
   const ds=DISTRICTS.map(d=>({d,list:off.filter(m=>m.district===d).sort((a,b)=>rank(a)-rank(b))})).filter(x=>x.list.length&&(!q||x.d.toLowerCase().includes(q)||x.list.some(match)));
-  const row=(m,head)=>`<button class="it" data-act="member" data-id="${m.id}">${av(m,'sm')}<span class="tx"><span class="mut" style="font-size:12.5px">${esc(head?m.head.title+(m.district?' · '+m.district:''):postName(m))}</span><b>${esc(m.name||'(name not added)')}</b><span class="mut">${[m.org&&esc(m.org),m.phone&&'📞 '+esc(ph5(m.phone))].filter(Boolean).join(' · ')}</span></span><span class="chev">›</span></button>`;
+  const row=(m,head)=>`<button class="it" data-act="member" data-id="${m.id}">${av(m,'sm')}<span class="tx"><span class="mut" style="font-size:12.5px">${esc(head?m.head.title+(m.district?' · '+m.district:''):postName(m))}</span><b>${esc(m.name||'(name not added)')}</b><span class="mut">${[m.org&&esc(m.org),m.phone&&pt(m.phone)].filter(Boolean).join(' · ')}</span></span><span class="chev">›</span></button>`;
   const L=isLeader(v);
   return bar('District committees','Presidents and office-bearers',L)+`<main>
   <input data-q placeholder="Search name, district, post, channel" value="${esc(V.q)}" aria-label="Search committees">
@@ -422,20 +457,20 @@ function headedit(){
   const m=Mb(V.sel),h=m.head||{title:'Rayalaseema In-charge',districts:[...RAYALASEEMA]};
   if(!V.hd)V.hd=[...h.districts];
   const all=V.hd.length===DISTRICTS.length;
-  return bar('In-charge',m.name)+`<main><div class="row">${av(m)}<div><b>${esc(m.name)}</b><div class="mut">${esc(m.org)} · 📞 ${esc(ph5(m.phone))}</div></div></div>
+  return bar('In-charge',m.name)+`<main><div class="row">${av(m)}<div><b>${esc(m.name)}</b><div class="mut">${esc(m.org)} · ${pt(m.phone)}</div></div></div>
   <form data-form="head"><label class="f" for="ht">Title</label><input id="ht" name="title" data-keep="ht" value="${esc(V.ht??h.title)}" placeholder="e.g. Rayalaseema In-charge" required>
   <label class="f">Districts under this In-charge</label>
   <div class="row" style="flex-wrap:wrap;gap:6px;margin-bottom:6px"><button type="button" class="btn sm ghost" data-act="hdset" data-k="rs">Rayalaseema (8)</button><button type="button" class="btn sm ghost" data-act="hdset" data-k="none">Clear</button></div>
   <label class="opt ${all?'on':''}"><input type="checkbox" data-hall ${all?'checked':''}><span><b>All districts</b><span class="mut">Head of all Presidents</span></span></label>
   <div class="chips">${DISTRICTS.map(d=>`<label class="${V.hd.includes(d)?'on':''}"><input type="checkbox" data-hd="${esc(d)}" ${V.hd.includes(d)?'checked':''}>${esc(d)}</label>`).join('')}</div>
-  <button class="btn">Save</button>${m.head?'<button type="button" class="btn ghost" data-act="rmhead">Remove this role</button>':''}</form></main>`;
+  <button class="btn">Save</button>${m.head?'<button type="button" class="btn danger" data-act="rmhead">Remove this role</button>':''}</form></main>`;
 }
 function thread(){
   const v=me(),o=Mb(V.sel);
   const l=S.msgs.filter(x=>x.kind==='dm'&&((x.from===v.id&&x.to[0]===o.id)||(x.from===o.id&&x.to.includes(v.id)))).sort((a,b)=>a.ts-b.ts);
   markRead(l.filter(x=>x.to.includes(v.id)&&!x.read.includes(v.id)));
-  return bar(o.name,role(o))+`<main>${l.length?l.map(x=>`<div class="bubble ${x.from===v.id?'me':''}">${esc(x.body)}<small>${fmt(x.ts)}</small></div>`).join(''):'<p class="mut">No messages yet. Say hello.</p>'}
-  <form data-form="dm"><label class="f" for="dmb">Message</label><textarea id="dmb" name="body" required style="min-height:80px"></textarea><button class="btn">Send</button></form></main>`;
+  return bar(o.name||'+91 '+ph5(o.phone),role(o))+`<main style="padding-bottom:8px">${l.length?l.map(x=>`<div class="bubble ${x.from===v.id?'me':''}">${esc(x.body)}<small>${fmt(x.ts)}</small></div>`).join(''):'<p class="mut">No messages yet. Say hello.</p>'}
+  </main><form data-form="dm" class="composer"><textarea id="dmb" name="body" required placeholder="Write a message" aria-label="Message"></textarea><button class="btn" aria-label="Send">${ic('send')}</button></form>`;
 }
 function newdm(){
   const q=V.q.toLowerCase(),ps=dmPeople(me()).filter(m=>!q||(m.name+' '+role(m)+' '+m.org).toLowerCase().includes(q)).sort((a,b)=>rank(a)-rank(b)||a.name.localeCompare(b.name));
@@ -454,14 +489,14 @@ function meView(){
   <form data-form="profile">
   <label class="f" for="p1">Name</label><input id="p1" name="name" value="${esc(v.name)}" required>
   <label class="f" for="p2">Working in (channel)</label><input id="p2" name="org" value="${esc(v.org)}">
-  <label class="f" for="p3">Designation</label><select id="p3" name="job"><option value="">—</option>${JOBS.map(x=>`<option ${v.job===x?'selected':''}>${x}</option>`).join('')}</select>
+  <label class="f" for="p3">Designation</label><select id="p3" name="job"><option value="">Choose your designation</option>${JOBS.map(x=>`<option ${v.job===x?'selected':''}>${x}</option>`).join('')}</select>
   <label class="f" for="p4">Area / Mandal</label><input id="p4" name="area" value="${esc(v.area)}">
   <label class="f" for="p5">Address</label><textarea id="p5" name="address">${esc(v.address)}</textarea>
-  <p class="mut" style="margin-top:8px">Mobile +91 ${esc(ph5(v.phone))} · ${esc(v.district)}</p>
+  <p class="mut" style="margin-top:8px">Mobile +91 ${esc(ph5(v.phone))}${v.district?' · '+esc(v.district):''}</p>
   <button class="btn">Save profile</button></form>
   ${isLeader(v)?'<button class="btn ghost" data-act="tab" data-v="idcard">My ID card</button>':''}
   <button class="btn ghost" data-act="logout">Log out</button>
-  ${v.admin?`<button class="btn ghost" data-act="reset" style="color:var(--red)">Reset to the original Anantapur list</button>`:''}</main>`+tabs();
+  ${v.admin?`<button class="btn danger" data-act="reset">Reset to the original Anantapur list</button>`:''}</main>`+tabs();
 }
 
 const SCREENS={removals,headpick,committees,login,otp,register,waiting,home,inbox,send,members,district:()=>district(false),member,slotpick,heads,headedit,thread,newdm,idcard,me:meView};
