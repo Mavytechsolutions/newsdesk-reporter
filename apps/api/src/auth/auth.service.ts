@@ -63,7 +63,7 @@ export class AuthService {
       await this.audit.log({ actorId: user.id, action: 'user.register', entity: 'user', entityId: user.id, ip });
     }
     if (user.status !== 'ACTIVE') throw new UnauthorizedException('This account is not active.');
-    return { ...(await this.issueTokens(user.id, user.role)), isNewUser: isNew };
+    return { ...(await this.issueTokens(user.id, user.role, 'otp')), isNewUser: isNew };
   }
 
   // ---------- Guest ----------
@@ -85,7 +85,7 @@ export class AuthService {
     }
     if (row.u.status !== 'ACTIVE' || row.s.suspendedAt || row.s.revokedAt) throw new UnauthorizedException('Your newsroom access is suspended.');
     await this.audit.log({ actorId: row.u.id, action: 'staff.login', entity: 'user', entityId: row.u.id, ip });
-    return { ...(await this.issueTokens(row.u.id, row.u.role)), role: row.u.role, name: row.u.name };
+    return { ...(await this.issueTokens(row.u.id, row.u.role, 'pwd')), role: row.u.role, name: row.u.name };
   }
 
   // ---------- Tokens ----------
@@ -97,7 +97,7 @@ export class AuthService {
     if (!user || user.status !== 'ACTIVE') throw new UnauthorizedException('Account is not active.');
     // rotate: old token can no longer be used
     await this.db.update(refreshTokens).set({ revokedAt: new Date() }).where(eq(refreshTokens.id, row.id));
-    return this.issueTokens(user.id, user.role);
+    return this.issueTokens(user.id, user.role, row.method === 'otp' ? 'otp' : 'pwd');
   }
 
   async logout(refreshToken: string) {
@@ -113,11 +113,13 @@ export class AuthService {
     return bcrypt.hash(pw, 12);
   }
 
-  private async issueTokens(userId: string, role: Role) {
-    const accessToken = await this.jwt.signAsync({ sub: userId, role }, { secret: config.jwtAccessSecret, expiresIn: config.jwtAccessTtl });
+  private async issueTokens(userId: string, role: Role, method: 'otp' | 'pwd') {
+    // Phone (OTP) logins are always reader sessions, even for staff: newsroom powers need the password login.
+    const effective: Role = method === 'otp' ? 'READER' : role;
+    const accessToken = await this.jwt.signAsync({ sub: userId, role: effective, amr: method }, { secret: config.jwtAccessSecret, expiresIn: config.jwtAccessTtl });
     const refreshToken = randomBytes(48).toString('base64url');
     await this.db.insert(refreshTokens).values({
-      userId, tokenHash: sha256(refreshToken), expiresAt: new Date(Date.now() + config.refreshTtlDays * 86400_000),
+      userId, tokenHash: sha256(refreshToken), method, expiresAt: new Date(Date.now() + config.refreshTtlDays * 86400_000),
     });
     return { accessToken, refreshToken, userId };
   }

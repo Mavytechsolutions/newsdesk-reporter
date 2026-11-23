@@ -83,6 +83,8 @@ export const refreshTokens = pgTable('refresh_tokens', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   tokenHash: text('token_hash').notNull().unique(),
+  /** How the person logged in: 'otp' (phone) or 'pwd' (newsroom email + password). OTP sessions never get newsroom powers. */
+  method: text('method').notNull().default('pwd'),
   expiresAt: ts('expires_at').notNull(),
   revokedAt: ts('revoked_at'),
   createdAt: ts('created_at').notNull().defaultNow(),

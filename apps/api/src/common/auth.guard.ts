@@ -31,7 +31,7 @@ export class AuthGuard implements CanActivate {
     if (token) {
       try {
         const p = await this.jwt.verifyAsync(token, { secret: config.jwtAccessSecret });
-        req.user = { id: p.sub, role: p.role, guest: p.role === 'GUEST' } satisfies AuthUser;
+        req.user = { id: p.sub, role: p.role, guest: p.role === 'GUEST', otp: p.amr === 'otp' } satisfies AuthUser;
       } catch {
         if (!isPublic) throw new UnauthorizedException('Session expired. Please log in again.');
       }
@@ -54,10 +54,11 @@ export class AuthGuard implements CanActivate {
         .leftJoin(staffProfiles, eq(staffProfiles.userId, users.id))
         .where(eq(users.id, user.id));
       if (!row || row.status !== 'ACTIVE') throw new UnauthorizedException('Account is not active.');
-      if (STAFF_ROLES.includes(row.role) && (row.suspendedAt || row.revokedAt))
+      if (!user.otp && STAFF_ROLES.includes(row.role) && (row.suspendedAt || row.revokedAt))
         throw new ForbiddenException('Your newsroom access is suspended.');
-      user.role = row.role; // role changes take effect immediately
-      if (roles?.length && !roles.includes(row.role)) throw new ForbiddenException('You do not have permission for this action.');
+      // role changes take effect immediately; phone (OTP) sessions always stay reader sessions
+      user.role = user.otp && STAFF_ROLES.includes(row.role) ? 'READER' : row.role;
+      if (roles?.length && !roles.includes(user.role as Role)) throw new ForbiddenException('You do not have permission for this action.');
     }
     return true;
   }

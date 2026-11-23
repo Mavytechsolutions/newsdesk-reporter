@@ -244,3 +244,25 @@ describe('Testing OTP and phone-linked staff', () => {
     expect(n.body.user.phone).toBe('+919123400000');
   });
 });
+
+describe('Phone login never gives newsroom powers', () => {
+  it('a staff member logging in by OTP gets a reader session; the password login gets newsroom access', async () => {
+    const { config } = await import('../src/config');
+    config.otpFixedCode = '1234';
+    try {
+      await http.post(api('/admin/staff')).set(as(admin))
+        .send({ email: 'editor.phone@test.mavy', password: 'StaffPass123', name: 'Editor Phone', role: 'MANAGING_EDITOR', phone: '9555512345' }).expect(201);
+      await http.post(api('/auth/otp/request')).send({ phone: '9555512345' }).expect(200);
+      const o = await http.post(api('/auth/otp/verify')).send({ phone: '9555512345', code: '1234' }).expect(200);
+      await http.get(api('/newsroom/articles')).set(as(o.body.accessToken)).expect(403);
+      await http.get(api('/admin/audit-logs')).set(as(o.body.accessToken)).expect(403);
+      await http.get(api('/me')).set(as(o.body.accessToken)).expect(200); // still a normal reader
+      const r = await http.post(api('/auth/refresh')).send({ refreshToken: o.body.refreshToken }).expect(200);
+      await http.get(api('/newsroom/articles')).set(as(r.body.accessToken)).expect(403); // refresh keeps it a reader session
+      const pw = await http.post(api('/auth/staff/login')).send({ email: 'editor.phone@test.mavy', password: 'StaffPass123' }).expect(200);
+      await http.get(api('/newsroom/articles')).set(as(pw.body.accessToken)).expect(200);
+    } finally {
+      config.otpFixedCode = '';
+    }
+  });
+});

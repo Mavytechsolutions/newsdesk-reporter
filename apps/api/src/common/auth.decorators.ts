@@ -19,6 +19,8 @@ export interface AuthUser {
   id: string;
   role: Role | 'GUEST';
   guest: boolean;
+  /** logged in with phone OTP (reader session) */
+  otp?: boolean;
 }
 
 export const CurrentUser = createParamDecorator((_: unknown, ctx: ExecutionContext): AuthUser | undefined => {

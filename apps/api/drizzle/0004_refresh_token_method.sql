@@ -1,0 +1,1 @@
+ALTER TABLE "refresh_tokens" ADD COLUMN "method" text DEFAULT 'pwd' NOT NULL;
