@@ -24,6 +24,32 @@ const muni = (en: string, te: string, corp = false): Node => ({
 const mandal = (en: string, te: string): Node => ({ en, te, type: 'MANDAL' });
 const ac = (en: string, te: string): Node => ({ en, te, type: 'ASSEMBLY_CONSTITUENCY' });
 
+
+const dist = (en: string, te: string): Node => ({ en, te, type: 'DISTRICT' });
+/** Other districts (no mandals yet). AP: 28 districts after the Dec 2025 reorganisation (Polavaram, Markapuram added). */
+const AP_OTHER: Node[] = [
+  dist('Srikakulam', 'శ్రీకాకుళం'), dist('Vizianagaram', 'విజయనగరం'), dist('Parvathipuram Manyam', 'పార్వతీపురం మన్యం'),
+  dist('Alluri Sitharama Raju', 'అల్లూరి సీతారామరాజు'), dist('Visakhapatnam', 'విశాఖపట్నం'), dist('Anakapalli', 'అనకాపల్లి'),
+  dist('Kakinada', 'కాకినాడ'), dist('East Godavari', 'తూర్పు గోదావరి'), dist('Dr. B.R. Ambedkar Konaseema', 'డా. బి.ఆర్. అంబేడ్కర్ కోనసీమ'),
+  dist('Eluru', 'ఏలూరు'), dist('West Godavari', 'పశ్చిమ గోదావరి'), dist('NTR', 'ఎన్టీఆర్'), dist('Krishna', 'కృష్ణా'),
+  dist('Palnadu', 'పల్నాడు'), dist('Guntur', 'గుంటూరు'), dist('Bapatla', 'బాపట్ల'), dist('Prakasam', 'ప్రకాశం'),
+  dist('Sri Potti Sriramulu Nellore', 'శ్రీ పొట్టి శ్రీరాములు నెల్లూరు'), dist('Kurnool', 'కర్నూలు'), dist('Nandyal', 'నంద్యాల'),
+  dist('YSR Kadapa', 'వైఎస్ఆర్ కడప'), dist('Annamayya', 'అన్నమయ్య'), dist('Chittoor', 'చిత్తూరు'), dist('Tirupati', 'తిరుపతి'),
+  dist('Polavaram', 'పోలవరం'), dist('Markapuram', 'మార్కాపురం'),
+];
+const TELANGANA: Node[] = [
+  dist('Adilabad', 'ఆదిలాబాద్'), dist('Kumuram Bheem Asifabad', 'కుమురం భీం ఆసిఫాబాద్'), dist('Mancherial', 'మంచిర్యాల'),
+  dist('Nirmal', 'నిర్మల్'), dist('Nizamabad', 'నిజామాబాద్'), dist('Jagtial', 'జగిత్యాల'), dist('Peddapalli', 'పెద్దపల్లి'),
+  dist('Jayashankar Bhupalpally', 'జయశంకర్ భూపాలపల్లి'), dist('Bhadradri Kothagudem', 'భద్రాద్రి కొత్తగూడెం'),
+  dist('Mahabubabad', 'మహబూబాబాద్'), dist('Warangal', 'వరంగల్'), dist('Hanumakonda', 'హనుమకొండ'), dist('Karimnagar', 'కరీంనగర్'),
+  dist('Rajanna Sircilla', 'రాజన్న సిరిసిల్ల'), dist('Kamareddy', 'కామారెడ్డి'), dist('Sangareddy', 'సంగారెడ్డి'), dist('Medak', 'మెదక్'),
+  dist('Siddipet', 'సిద్దిపేట'), dist('Jangaon', 'జనగామ'), dist('Yadadri Bhuvanagiri', 'యాదాద్రి భువనగిరి'),
+  dist('Medchal Malkajgiri', 'మేడ్చల్ మల్కాజిగిరి'), dist('Hyderabad', 'హైదరాబాద్'), dist('Ranga Reddy', 'రంగారెడ్డి'),
+  dist('Vikarabad', 'వికారాబాద్'), dist('Mahabubnagar', 'మహబూబ్‌నగర్'), dist('Narayanpet', 'నారాయణపేట'),
+  dist('Jogulamba Gadwal', 'జోగులాంబ గద్వాల'), dist('Wanaparthy', 'వనపర్తి'), dist('Nagarkurnool', 'నాగర్‌కర్నూల్'),
+  dist('Nalgonda', 'నల్గొండ'), dist('Suryapet', 'సూర్యాపేట'), dist('Khammam', 'ఖమ్మం'), dist('Mulugu', 'ములుగు'),
+];
+
 const TREE: Node[] = [
   {
     en: 'Andhra Pradesh', te: 'ఆంధ్రప్రదేశ్', type: 'STATE', children: [
@@ -75,9 +101,10 @@ const TREE: Node[] = [
           mandal('Ramagiri', 'రామగిరి'), mandal('Kanaganapalle', 'కనగానపల్లి'), mandal('Chennekothapalle', 'చెన్నేకొత్తపల్లి'),
         ],
       },
+      ...AP_OTHER,
     ],
   },
-  { en: 'Telangana', te: 'తెలంగాణ', type: 'STATE', children: [{ en: 'Hyderabad', te: 'హైదరాబాద్', type: 'DISTRICT' }] },
+  { en: 'Telangana', te: 'తెలంగాణ', type: 'STATE', children: TELANGANA },
 ];
 
 const CATEGORIES: [string, string, string, boolean][] = [

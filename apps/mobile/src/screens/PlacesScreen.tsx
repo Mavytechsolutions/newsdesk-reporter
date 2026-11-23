@@ -18,8 +18,14 @@ export function PlacePicker({ onDone, doneLabel, onSkip }: { onDone: (p: Place[]
   const name = useName();
   const insets = useSafeAreaInsets();
   const states = useLocations();
-  const ap = states.data?.find((x) => x.nameEn === 'Andhra Pradesh') ?? states.data?.[0];
+  const [stateId, setStateId] = useState<string | null>(null);
+  const ap = states.data?.find((x) => x.id === stateId) ?? states.data?.find((x) => x.nameEn === 'Andhra Pradesh') ?? states.data?.[0];
   const districts = useLocations(ap?.id);
+  const HOME = ['Anantapur', 'Sri Sathya Sai'];
+  const list = useMemo(() => [...(districts.data ?? [])].sort((a, b) => {
+    const ia = HOME.indexOf(a.nameEn), ib = HOME.indexOf(b.nameEn);
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+  }), [districts.data]);
   const [open, setOpen] = useState<string | null>(null);
   const [picked, setPicked] = useState<Place[]>(useSettings.getState().places);
   const has = (id: string) => picked.some((p) => p.id === id);
@@ -36,7 +42,18 @@ export function PlacePicker({ onDone, doneLabel, onSkip }: { onDone: (p: Place[]
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 120 }}>
         <T bold size={22}>{t.choosePlaces}</T>
         <T color={th.muted} style={{ marginTop: 4, marginBottom: 12 }}>{t.choosePlacesHint}</T>
-        {!districts.data ? <ActivityIndicator color={th.green} style={{ margin: 30 }} /> : districts.data.map((d) => (
+        <View style={[styles.row, { marginBottom: 14 }]}>
+          {(states.data ?? []).map((st) => {
+            const on = st.id === ap?.id;
+            return (
+              <Pressable key={st.id} onPress={() => { setStateId(st.id); setOpen(null); }} accessibilityRole="tab" accessibilityState={{ selected: on }}
+                style={[styles.stateTab, { backgroundColor: on ? th.green : th.card, borderColor: on ? th.green : th.border }]}>
+                <T bold size={16} color={on ? '#fff' : th.text}>{name(st)}</T>
+              </Pressable>
+            );
+          })}
+        </View>
+        {!districts.data ? <ActivityIndicator color={th.green} style={{ margin: 30 }} /> : list.map((d) => (
           <View key={d.id} style={[styles.box, { backgroundColor: th.card, borderColor: has(d.id) ? th.green : th.border }]}>
             <View style={styles.row}>
               <Pressable onPress={() => toggle(d)} style={[styles.row, { flex: 1 }]} accessibilityRole="checkbox" accessibilityState={{ checked: has(d.id) }}>
@@ -64,10 +81,12 @@ export function PlacePicker({ onDone, doneLabel, onSkip }: { onDone: (p: Place[]
 
 function Children({ parent, has, toggle }: { parent: Place; has: (id: string) => boolean; toggle: (p: Place) => void }) {
   const th = useTheme();
+  const t = useT();
   const name = useName();
   const q = useLocations(parent.id);
   const local = useMemo(() => (q.data ?? []).filter((c) => c.type === 'MANDAL' || c.type === 'MUNICIPALITY'), [q.data]);
   if (!q.data) return <ActivityIndicator color={th.green} style={{ margin: 12 }} />;
+  if (!local.length) return <T color={th.muted} size={14} style={{ marginTop: 10 }}>{t.mandalsSoon}</T>;
   return (
     <View style={[styles.wrap, { marginTop: 12 }]}>
       {local.map((c) => <Chip key={c.id} label={name(c)} active={has(c.id)} onPress={() => toggle(c)} />)}
@@ -97,5 +116,6 @@ const styles = StyleSheet.create({
   box: { borderRadius: 14, padding: 14, marginBottom: 10, borderWidth: 1.5 },
   row: { flexDirection: 'row', alignItems: 'center' },
   wrap: { flexDirection: 'row', flexWrap: 'wrap' },
+  stateTab: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 999, borderWidth: 1.5, marginRight: 8 },
   bar: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: 12, borderTopWidth: 1 },
 });
