@@ -19,6 +19,7 @@ import { ListFeedScreen } from './src/screens/ListFeedScreen';
 import { PlacesScreen } from './src/screens/PlacesScreen';
 import { OnboardingScreen } from './src/screens/OnboardingScreen';
 import { CommentsScreen } from './src/screens/CommentsScreen';
+import { ShareCardHost } from './src/share/ShareCard';
 import { BookmarksScreen, HistoryScreen, LoginScreen, ProfileScreen, TopicsScreen, VideosScreen } from './src/screens/OtherScreens';
 
 const queryClient = new QueryClient({
@@ -91,15 +92,16 @@ function Root() {
       ) : (
         <Stack.Navigator screenOptions={{ headerTintColor: th.text, headerBackButtonDisplayMode: 'minimal', headerTitleStyle: { fontFamily: font('bold') } }}>
           <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />
-          <Stack.Screen name="Article" component={ArticleScreen} options={{ title: '' }} />
+          <Stack.Screen name="Article" component={ArticleScreen} options={{ title: '', animation: 'slide_from_right' }} />
           <Stack.Screen name="ListFeed" component={ListFeedScreen} />
           <Stack.Screen name="Places" component={PlacesScreen} options={{ title: t.myPlaces }} />
           <Stack.Screen name="Login" component={LoginScreen} options={{ title: '', presentation: 'modal' }} />
           <Stack.Screen name="Topics" component={TopicsScreen} options={{ title: t.myTopics }} />
-          <Stack.Screen name="Comments" component={CommentsScreen} />
+          <Stack.Screen name="Comments" component={CommentsScreen} options={{ animation: 'slide_from_bottom' }} />
           <Stack.Screen name="History" component={HistoryScreen} options={{ title: t.history }} />
         </Stack.Navigator>
       )}
+      <ShareCardHost />
     </NavigationContainer>
   );
 }

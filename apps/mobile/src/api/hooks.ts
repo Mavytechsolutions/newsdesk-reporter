@@ -1,5 +1,6 @@
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Alert, Linking, Share } from 'react-native';
+import { Alert } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { api, qs, useAuth } from './client';
 import type { ArticleCard, Category, Comment, Me, Page, Place } from './types';
 import { useEffect, useState } from 'react';
@@ -88,19 +89,8 @@ export function useToggleSave() {
   };
 }
 
-export async function shareArticle(a: ArticleCard, via: 'any' | 'whatsapp' = 'any') {
-  const text = `${a.headline}\n\n${a.summary}\n\n${a.shareUrl}\n— MAVY NEWS`;
-  api(`/articles/${a.id}/share`, { method: 'POST' }).catch(() => undefined);
-  if (via === 'whatsapp') {
-    const url = `whatsapp://send?text=${encodeURIComponent(text)}`;
-    if (await Linking.canOpenURL(url).catch(() => false)) return Linking.openURL(url);
-  }
-  try {
-    await Share.share({ message: text, url: a.shareUrl, title: a.headline });
-  } catch (e: any) {
-    Alert.alert('Share', e?.message ?? 'Could not share');
-  }
-}
+/** Share as a branded picture card (falls back to text). */
+export { shareArticle } from '../share/ShareCard';
 
 export function markRead(id: string) {
   if (useAuth.getState().loggedIn) api(`/articles/${id}/read`, { method: 'POST' }).catch(() => undefined);
@@ -116,6 +106,7 @@ export function useReaction(a: ArticleCard, onNeedLogin: () => void) {
   }, [a.id, a.liked, a.disliked, a.likeCount, a.dislikeCount]);
   const set = async (want: 'like' | 'dislike') => {
     if (!useAuth.getState().loggedIn) return onNeedLogin();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
     const reaction = (want === 'like' && state.liked) || (want === 'dislike' && state.disliked) ? 'none' : want;
     const prev = state;
     setState({

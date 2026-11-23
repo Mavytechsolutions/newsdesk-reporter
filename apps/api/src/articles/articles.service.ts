@@ -256,7 +256,7 @@ export class ArticlesService implements OnModuleInit, OnModuleDestroy {
       heroImageCredit: a.heroImageCredit,
       publishedAt: a.publishedAt,
       updatedAt: a.updatedAt,
-      shareUrl: `https://mavynews.in/n/${a.slug}`,
+      shareUrl: `${config.publicWebUrl}/n/${a.slug}`,
     };
   }
 

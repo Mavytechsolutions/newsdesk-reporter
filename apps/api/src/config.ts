@@ -27,6 +27,10 @@ export const config = {
   otpMaxAttempts: num('OTP_MAX_ATTEMPTS', 5),
   corsOrigins: (process.env.CORS_ORIGINS ?? '').split(',').map((s) => s.trim()).filter(Boolean),
   enableScheduler: process.env.DISABLE_SCHEDULER !== '1',
+  /** Public address of this server, used in shared story links (e.g. http://194.238.17.81:8474 or https://api.mavynews.in) */
+  publicWebUrl: (process.env.PUBLIC_WEB_URL ?? `http://localhost:${num('PORT', 4000)}`).replace(/\/$/, ''),
+  /** Where people can get the app (shown on shared story pages) */
+  appDownloadUrl: process.env.APP_DOWNLOAD_URL ?? '',
 };
 
 if (config.env === 'production') {

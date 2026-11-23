@@ -149,3 +149,29 @@ describe('Report a story (grievance)', () => {
     expect(logs.body.items[0].action).toBe('report.resolved');
   });
 });
+
+describe('Shared story web page', () => {
+  it('shared link opens a readable page with WhatsApp preview tags, and escapes text', async () => {
+    const feed = await http.get(api('/feed')).expect(200);
+    const card = feed.body.items[0];
+    expect(card.shareUrl).toMatch(/\/n\/[^/]+$/);
+    const slug = card.shareUrl.split('/n/')[1];
+    const r = await http.get(`/n/${slug}`).expect(200);
+    expect(r.headers['content-type']).toMatch(/html/);
+    expect(r.text).toContain('<meta property="og:title"');
+    expect(r.text).toContain(card.headline);
+    await http.get('/n/does-not-exist').expect(404);
+    // stories that are not published are not shown
+    await pool.query("update articles set status='ARCHIVED' where slug=$1", [slug]);
+    await http.get(`/n/${slug}`).expect(404);
+    await pool.query("update articles set status='PUBLISHED' where slug=$1", [slug]);
+  });
+
+  it('html in headlines cannot inject into the page', async () => {
+    const slug = (await pool.query("select slug, id from articles where status='PUBLISHED' limit 1")).rows[0];
+    await pool.query("update article_translations set headline='<script>alert(1)</script> test' where article_id=$1", [slug.id]);
+    const r = await http.get(`/n/${slug.slug}`).expect(200);
+    expect(r.text).not.toContain('<script>alert(1)</script>');
+    expect(r.text).toContain('&lt;script&gt;');
+  });
+});

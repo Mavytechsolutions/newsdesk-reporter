@@ -3,8 +3,8 @@
  * time + "2 / 165", and an action bar with like, dislike, a big WhatsApp SHARE button,
  * comments, a ⋮ menu and share. Swipe up for the next story; tap the story for full text.
  */
-import React, { useState } from 'react';
-import { Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import React, { useMemo, useRef, useState } from 'react';
+import { Animated, Modal, PanResponder, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
 import { useNavigation } from '@react-navigation/native';
@@ -16,7 +16,7 @@ import { timeAgo, useName, useT } from '../i18n';
 import { useSettings } from '../store/settings';
 import { reportArticle, shareArticle, useReaction, useToggleSave } from '../api/hooks';
 
-export function StoryPage({ a, height, index, total }: { a: ArticleCard; height: number; index: number; total?: number }) {
+export function StoryPage({ a, height, index, total, onTap }: { a: ArticleCard; height: number; index: number; total?: number; onTap?: () => void }) {
   const th = useTheme();
   const t = useT();
   const name = useName();
@@ -24,12 +24,35 @@ export function StoryPage({ a, height, index, total }: { a: ArticleCard; height:
   const [menu, setMenu] = useState(false);
   const r = useReaction(a, () => nav.navigate('Login'));
   const open = () => nav.navigate('Article', { slug: a.slug });
+
+  // Swipe left on the story to open the full story (the card follows your finger a little).
+  const dx = useRef(new Animated.Value(0)).current;
+  const pan = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_, g) => g.dx < -12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.8,
+        onPanResponderMove: (_, g) => dx.setValue(Math.max(-120, Math.min(0, g.dx))),
+        onPanResponderRelease: (_, g) => {
+          if (g.dx < -70) open();
+          Animated.spring(dx, { toValue: 0, useNativeDriver: true, bounciness: 6 }).start();
+        },
+        onPanResponderTerminate: () => Animated.spring(dx, { toValue: 0, useNativeDriver: true }).start(),
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [a.slug],
+  );
+  const hint = dx.interpolate({ inputRange: [-120, -30, 0], outputRange: [1, 0.3, 0] });
   const imageH = Math.round(height * 0.42);
   const place = a.locations[0] ? name(a.locations[0]) : '';
 
   return (
     <View style={{ height, backgroundColor: th.card }}>
-      <Pressable onPress={open} style={{ flex: 1 }} accessibilityRole="button" accessibilityLabel={a.headline}>
+      <Animated.View style={{ position: 'absolute', right: 10, top: imageH + 30, opacity: hint, alignItems: 'center' }} pointerEvents="none">
+        <Ionicons name="chevron-back-circle" size={44} color={th.green} />
+        <T bold size={12} color={th.green}>{t.readMore}</T>
+      </Animated.View>
+      <Animated.View style={{ flex: 1, transform: [{ translateX: dx }] }} {...pan.panHandlers}>
+      <Pressable onPress={onTap ?? open} style={{ flex: 1 }} accessibilityRole="button" accessibilityLabel={a.headline}>
         <View>
           <HeroImage a={a} height={imageH} />
           <View style={[styles.brand, { backgroundColor: 'rgba(11,31,58,0.88)' }]}>
@@ -51,11 +74,18 @@ export function StoryPage({ a, height, index, total }: { a: ArticleCard; height:
           <T size={17} color={th.text} style={{ marginTop: 8, lineHeight: 28, opacity: 0.9 }} numberOfLines={Math.max(3, Math.floor((height - imageH - 260) / 28))}>
             {a.summary}
           </T>
-          <T size={12} color={th.muted} style={{ marginTop: 8 }} numberOfLines={1}>
-            {a.reporter ? `✍ ${a.reporter} · ` : ''}{a.sourceLabel}
-          </T>
+          <View style={styles.byline}>
+            <T size={12} color={th.muted} style={{ flex: 1 }} numberOfLines={1}>
+              {a.reporter ? `✍ ${a.reporter} · ` : ''}{a.sourceLabel}
+            </T>
+            <Pressable onPress={open} hitSlop={10} accessibilityRole="link" style={styles.readMore}>
+              <T bold size={13} color={th.green}>{t.readMore}</T>
+              <Ionicons name="chevron-forward" size={15} color={th.green} />
+            </Pressable>
+          </View>
         </View>
       </Pressable>
+      </Animated.View>
 
       <View style={styles.infoRow}>
         <Ionicons name="time-outline" size={16} color={th.muted} />
@@ -189,6 +219,8 @@ const styles = StyleSheet.create({
   body: { paddingHorizontal: 16, paddingTop: 12, flex: 1 },
   tags: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginBottom: 6 },
   badge: { paddingHorizontal: 7, paddingVertical: 1, borderRadius: 4 },
+  byline: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
+  readMore: { flexDirection: 'row', alignItems: 'center', marginLeft: 8 },
   infoRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 14 },
   bar: { flexDirection: 'row', alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth, height: 62, paddingHorizontal: 8 },
   barBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, minWidth: 64 },

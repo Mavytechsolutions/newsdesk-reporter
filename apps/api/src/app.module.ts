@@ -13,6 +13,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { ArticlesModule } from './articles/articles.module';
 import { FeedModule } from './articles/feed.module';
 import { CommunityModule } from './articles/community.module';
+import { WebPageModule } from './articles/web-page.module';
 import { Public } from './common/auth.decorators';
 
 @Controller('health')
@@ -32,7 +33,7 @@ class HealthController {
 @Module({
   imports: [
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 300 }]),
-    DbModule, AuditModule, AuthModule, LocationsModule, CategoriesModule, UsersModule, StaffModule, ArticlesModule, FeedModule, CommunityModule,
+    DbModule, AuditModule, AuthModule, LocationsModule, CategoriesModule, UsersModule, StaffModule, ArticlesModule, FeedModule, CommunityModule, WebPageModule,
   ],
   controllers: [HealthController],
   providers: [
