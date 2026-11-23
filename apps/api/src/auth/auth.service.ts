@@ -31,12 +31,12 @@ export class AuthService {
     const [{ n }] = await this.db.select({ n: count() }).from(otpRequests).where(and(eq(otpRequests.phone, phone), gt(otpRequests.createdAt, hourAgo)));
     if (n >= config.otpMaxPerHour) throw new HttpException('Too many OTP requests. Please try again after an hour.', HttpStatus.TOO_MANY_REQUESTS);
 
-    const code = String(randomInt(100000, 1000000));
+    const code = config.otpFixedCode || String(randomInt(100000, 1000000));
     await this.db.insert(otpRequests).values({
       phone, ip, codeHash: hashOtp(phone, code), expiresAt: new Date(Date.now() + config.otpTtlSeconds * 1000),
     });
-    await this.sms.sendOtp(phone, code);
-    return { sent: true, phone, expiresInSeconds: config.otpTtlSeconds };
+    if (!config.otpFixedCode) await this.sms.sendOtp(phone, code);
+    return { sent: true, phone, expiresInSeconds: config.otpTtlSeconds, codeLength: code.length };
   }
 
   async verifyOtp(rawPhone: string, code: string, ip: string) {
@@ -48,7 +48,7 @@ export class AuthService {
     if (!otp) throw new UnauthorizedException('OTP expired. Please request a new one.');
     if (otp.attempts >= config.otpMaxAttempts) throw new UnauthorizedException('Too many wrong attempts. Please request a new OTP.');
 
-    const ok = timingSafeEqual(Buffer.from(otp.codeHash), Buffer.from(hashOtp(phone, code)));
+    const ok = timingSafeEqual(Buffer.from(otp.codeHash), Buffer.from(hashOtp(phone, code.trim())));
     if (!ok) {
       await this.db.update(otpRequests).set({ attempts: otp.attempts + 1 }).where(eq(otpRequests.id, otp.id));
       throw new UnauthorizedException('Wrong OTP.');

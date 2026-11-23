@@ -10,7 +10,6 @@ import { useTheme } from '../theme';
 import { useName, useT } from '../i18n';
 import { useSettings } from '../store/settings';
 import { useQueryClient } from '@tanstack/react-query';
-import { ServerSetting } from './OtherScreens';
 
 /** Pick districts and mandals/towns. Used during first-time setup and from Profile. */
 export function PlacePicker({ onDone, doneLabel, onSkip }: { onDone: (p: Place[]) => void; doneLabel: string; onSkip?: () => void }) {
@@ -28,10 +27,9 @@ export function PlacePicker({ onDone, doneLabel, onSkip }: { onDone: (p: Place[]
 
   if (states.isError || districts.isError)
     return (
-      <ScrollView style={{ flex: 1, backgroundColor: th.bg }} contentContainerStyle={{ padding: 16, paddingTop: insets.top + 16 }}>
+      <View style={{ flex: 1, backgroundColor: th.bg, paddingTop: insets.top }}>
         <ErrorState error={states.error ?? districts.error} onRetry={() => { states.refetch(); districts.refetch(); }} />
-        <ServerSetting />
-      </ScrollView>
+      </View>
     );
   return (
     <View style={{ flex: 1, backgroundColor: th.bg }}>

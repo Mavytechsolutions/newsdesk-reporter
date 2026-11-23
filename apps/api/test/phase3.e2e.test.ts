@@ -211,3 +211,36 @@ describe('Newsroom page and photo upload', () => {
     await http.get('/media/0123456789abcdef0123456789abcdef.jpg').expect(404);
   });
 });
+
+describe('Testing OTP and phone-linked staff', () => {
+  it('with a fixed test code, any number logs in with 1234 (no SMS); wrong code still fails', async () => {
+    const { config } = await import('../src/config');
+    config.otpFixedCode = '1234';
+    try {
+      const r = await http.post(api('/auth/otp/request')).send({ phone: '9000012345' }).expect(200);
+      expect(r.body.codeLength).toBe(4);
+      await http.post(api('/auth/otp/verify')).send({ phone: '9000012345', code: '4321' }).expect(401);
+      const ok = await http.post(api('/auth/otp/verify')).send({ phone: '9000012345', code: '1234' }).expect(200);
+      expect(ok.body.accessToken).toBeTruthy();
+    } finally {
+      config.otpFixedCode = '';
+    }
+  });
+
+  it('admin can give a phone number a newsroom account; an existing reader with that number is upgraded, not duplicated', async () => {
+    // 9876511111 is already a reader in this test
+    const before = (await pool.query("select id from users where phone='+919876511111'")).rows[0].id;
+    const s = await http.post(api('/admin/staff')).set(as(admin))
+      .send({ email: 'phone.reporter@test.mavy', password: 'StaffPass123', name: 'Phone Reporter', role: 'REPORTER', phone: '9876511111' }).expect(201);
+    expect(s.body.user.id).toBe(before);
+    expect(s.body.user.role).toBe('REPORTER');
+    await http.post(api('/auth/staff/login')).send({ email: 'phone.reporter@test.mavy', password: 'StaffPass123' }).expect(200);
+    // same number again is refused
+    await http.post(api('/admin/staff')).set(as(admin))
+      .send({ email: 'other@test.mavy', password: 'StaffPass123', name: 'Someone Else', role: 'REPORTER', phone: '9876511111' }).expect(409);
+    // a brand-new number creates a new account carrying the phone
+    const n = await http.post(api('/admin/staff')).set(as(admin))
+      .send({ email: 'new.phone@test.mavy', password: 'StaffPass123', name: 'New', role: 'REPORTER', phone: '9123400000' }).expect(201);
+    expect(n.body.user.phone).toBe('+919123400000');
+  });
+});

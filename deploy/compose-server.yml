@@ -37,6 +37,8 @@ services:
       - PUBLIC_WEB_URL=http://194.238.17.81:8474
       - APP_DOWNLOAD_URL=http://194.238.17.81:8475
       - MEDIA_DIR=/data/media
+      # TESTING ONLY: every number logs in with OTP 1234. Remove this line when real SMS is set up.
+      - OTP_FIXED_CODE=1234
     volumes:
       - /var/lib/mavy-news/media:/data/media
     command: ["sh", "-c", "apk add --no-cache git >/dev/null && rm -rf /src && git clone -q --depth 1 -b mavy-news-app https://github.com/Mavytechsolutions/newsdesk-reporter /src && exec sh /src/deploy/api-run.sh"]

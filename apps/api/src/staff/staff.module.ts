@@ -9,6 +9,7 @@ import { staffAssignments, staffProfiles, users, Role } from '../db/schema';
 import { AuthUser, ClientIp, CurrentUser, Roles, STAFF_ROLES } from '../common/auth.decorators';
 import { AuditService } from '../audit/audit.module';
 import { AuthService } from '../auth/auth.service';
+import { normalizeIndianPhone } from '../common/text';
 import { LocationsModule, LocationsService } from '../locations/locations.module';
 
 const PASSWORD_RULE = /^(?=.*[A-Za-z])(?=.*\d).{10,}$/;
@@ -20,6 +21,8 @@ class CreateStaffDto {
   @IsIn(STAFF_ROLES) role: Role;
   @IsOptional() @IsString() @MaxLength(80) designation?: string;
   @IsOptional() @IsArray() @ArrayMaxSize(50) @IsUUID('all', { each: true }) locationIds?: string[];
+  /** Mobile number, so this person can also log in to the app with OTP and see their own byline. */
+  @IsOptional() @IsString() @MaxLength(16) phone?: string;
 }
 class UpdateStaffDto {
   @IsOptional() @IsIn(STAFF_ROLES) role?: Role;
@@ -52,9 +55,19 @@ export class StaffService {
     const [exists] = await this.db.select({ id: users.id }).from(users).where(eq(users.email, email));
     if (exists) throw new ConflictException('A user with this email already exists');
     await this.locationsSvc.requireAll(dto.locationIds ?? []);
+    let phone: string | null = null;
+    if (dto.phone) {
+      phone = normalizeIndianPhone(dto.phone);
+      if (!phone) throw new BadRequestException('Enter a valid 10-digit Indian mobile number');
+    }
+    const [byPhone] = phone ? await this.db.select().from(users).where(eq(users.phone, phone)) : [];
+    if (byPhone && byPhone.role !== 'READER') throw new ConflictException('This mobile number already belongs to a staff member');
     const passwordHash = await AuthService.hashPassword(dto.password);
     const id = await this.db.transaction(async (tx) => {
-      const [u] = await tx.insert(users).values({ email, passwordHash, name: dto.name, role: dto.role, language: 'te' }).returning({ id: users.id });
+      const [u] = byPhone
+        // the person already uses the app as a reader: upgrade that same account
+        ? await tx.update(users).set({ email, passwordHash, name: dto.name, role: dto.role, status: 'ACTIVE', updatedAt: new Date() }).where(eq(users.id, byPhone.id)).returning({ id: users.id })
+        : await tx.insert(users).values({ email, phone, passwordHash, name: dto.name, role: dto.role, language: 'te' }).returning({ id: users.id });
       await tx.insert(staffProfiles).values({ userId: u.id, designation: dto.designation, verified: true });
       if (dto.locationIds?.length) await tx.insert(staffAssignments).values(dto.locationIds.map((locationId) => ({ staffId: u.id, locationId })));
       await this.audit.log({ actorId: actor.id, action: 'staff.create', entity: 'user', entityId: u.id, metadata: { role: dto.role, locationIds: dto.locationIds }, ip }, tx as unknown as Db);

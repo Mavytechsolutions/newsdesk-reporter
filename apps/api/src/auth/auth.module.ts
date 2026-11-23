@@ -7,7 +7,7 @@ import { createSmsProvider, SMS_PROVIDER } from './sms/sms.provider';
 import { ClientIp, Public } from '../common/auth.decorators';
 
 class OtpRequestDto { @IsString() @Length(10, 16) phone: string; }
-class OtpVerifyDto { @IsString() @Length(10, 16) phone: string; @IsString() @Length(6, 6) code: string; }
+class OtpVerifyDto { @IsString() @Length(10, 16) phone: string; @IsString() @Length(4, 6) code: string; }
 class StaffLoginDto { @IsEmail() email: string; @IsString() @MinLength(8) password: string; }
 class RefreshDto { @IsString() @MinLength(20) refreshToken: string; }
 class SocialDto { @IsString() idToken: string; }

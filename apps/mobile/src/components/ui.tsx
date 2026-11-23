@@ -3,7 +3,7 @@ import { ActivityIndicator, Animated, Pressable, StyleSheet, Text, TextProps, Vi
 import { Ionicons } from '@expo/vector-icons';
 import { useFont, useTheme } from '../theme';
 import { useT } from '../i18n';
-import { ApiError, serverUrl } from '../api/client';
+import { ApiError } from '../api/client';
 
 /** Text that automatically uses the Telugu font when the app is in Telugu. */
 export function T({ bold, style, color, size = 15, ...p }: TextProps & { bold?: boolean; color?: string; size?: number }) {
@@ -100,7 +100,7 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry: () => 
     <EmptyState
       icon={offline ? 'cloud-offline-outline' : 'alert-circle-outline'}
       title={offline ? t.offlineTitle : t.errorTitle}
-      hint={offline ? `${serverUrl()}` : error instanceof Error ? error.message : undefined}
+      hint={error instanceof Error && !offline ? error.message : undefined}
       action={{ title: t.retry, onPress: onRetry }}
     />
   );

@@ -123,9 +123,9 @@ export function LoginScreen({ navigation }: any) {
         <>
           <T>{t.enterOtp} +91 {phone}</T>
           <TextInput value={code} onChangeText={(v) => setCode(v.replace(/\D/g, '').slice(0, 6))} keyboardType="number-pad" maxLength={6}
-            textContentType="oneTimeCode" autoComplete="sms-otp" placeholder="● ● ● ● ● ●" placeholderTextColor={th.muted}
+            textContentType="oneTimeCode" autoComplete="sms-otp" placeholder="● ● ● ●" placeholderTextColor={th.muted}
             style={[...input, { marginTop: 12, fontSize: 24, letterSpacing: 8, textAlign: 'center' }]} autoFocus accessibilityLabel="OTP" />
-          <Button title={t.verify} onPress={verify} loading={busy} disabled={code.length !== 6} style={{ marginTop: 16 }} />
+          <Button title={t.verify} onPress={verify} loading={busy} disabled={code.length < 4} style={{ marginTop: 16 }} />
           <Pressable disabled={wait > 0 || busy} onPress={send} style={{ marginTop: 16, alignItems: 'center' }}>
             <T color={wait > 0 ? th.muted : th.green}>{wait > 0 ? `${t.resendIn} ${wait}s` : t.resend}</T>
           </Pressable>
@@ -148,6 +148,7 @@ export function ProfileScreen({ navigation }: any) {
   const { language, setLanguage, theme, setTheme, places } = useSettings();
   const [editing, setEditing] = useState(false);
   const [newName, setNewName] = useState('');
+  const [devTaps, setDevTaps] = useState(0); // hidden technical settings for the developer
 
   const changeLanguage = (l: 'te' | 'en') => {
     setLanguage(l);
@@ -224,10 +225,12 @@ export function ProfileScreen({ navigation }: any) {
           })} />
         </>
       )}
-      <ServerSetting />
-      <T size={12} color={th.muted} style={{ textAlign: 'center', marginTop: 20 }}>
-        MAVY TECH SOLUTIONS PVT LTD · {t.version} {Constants.expoConfig?.version ?? '1.0.0'}
-      </T>
+      {devTaps >= 7 ? <ServerSetting /> : null}
+      <Pressable onPress={() => setDevTaps((n) => n + 1)} accessibilityRole="text">
+        <T size={12} color={th.muted} style={{ textAlign: 'center', marginTop: 20 }}>
+          MAVY TECH SOLUTIONS PVT LTD · {t.version} {Constants.expoConfig?.version ?? '1.0.0'}
+        </T>
+      </Pressable>
     </ScrollView>
   );
 }

@@ -25,6 +25,8 @@ export const config = {
   otpTtlSeconds: num('OTP_TTL_SECONDS', 300),
   otpMaxPerHour: num('OTP_MAX_PER_HOUR', 5),
   otpMaxAttempts: num('OTP_MAX_ATTEMPTS', 5),
+  /** TESTING ONLY: every phone number logs in with this code (e.g. 1234) and no SMS is sent. Refused in production. */
+  otpFixedCode: process.env.OTP_FIXED_CODE ?? '',
   corsOrigins: (process.env.CORS_ORIGINS ?? '').split(',').map((s) => s.trim()).filter(Boolean),
   enableScheduler: process.env.DISABLE_SCHEDULER !== '1',
   /** Public address of this server, used in shared story links (e.g. http://194.238.17.81:8474 or https://api.mavynews.in) */
@@ -39,4 +41,5 @@ if (config.env === 'production') {
   if (config.jwtAccessSecret.length < 32 || config.jwtAccessSecret.startsWith('change-me'))
     throw new Error('Set a strong JWT_ACCESS_SECRET for production');
   if (config.smsProvider === 'console') throw new Error('SMS_PROVIDER=console is not allowed in production');
+  if (config.otpFixedCode) throw new Error('OTP_FIXED_CODE is for testing only and is not allowed in production');
 }

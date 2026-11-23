@@ -29,6 +29,8 @@ export function HomeScreen({ navigation }: any) {
   const [chrome, setChrome] = useState(true);
   const [headerH, setHeaderH] = useState(120);
   const anim = useRef(new Animated.Value(1)).current;
+  const tabsRef = useRef<any>(null);
+  const tabX = useRef<Record<string, number>>({});
   const placeLabel = places.length ? (places.length === 1 ? name(places[0]) : `${name(places[0])} +${places.length - 1}`) : t.allPlaces;
   const needsLocation = feed.data?.pages[0]?.needsLocation;
   const showChrome = !immersive || chrome;
@@ -64,15 +66,23 @@ export function HomeScreen({ navigation }: any) {
         <IconBtn label={t.alerts} name="notifications-outline" color="#fff" onPress={() => navigation.navigate('ListFeed', { title: t.alerts, filter: { breaking: true } })} />
         <IconBtn label={t.profile} name="person-circle-outline" color="#fff" size={26} onPress={() => navigation.navigate('Profile')} />
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 8 }}>
+      <ScrollView ref={tabsRef} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingTop: 10, paddingBottom: 12, paddingRight: 24 }}>
         {(cats.data ?? [{ slug: 'for-you', nameEn: 'For You', nameTe: 'మీ కోసం' } as any]).map((c) => {
           const active = c.slug === tab;
           return (
-            <Pressable key={c.slug} onPress={() => setTab(c.slug)} accessibilityRole="tab" accessibilityState={{ selected: active }} style={styles.tab}>
-              <T bold={active} size={14} color={active ? '#fff' : 'rgba(255,255,255,0.7)'}>
-                {c.slug === 'breaking' ? '🔴 ' : ''}{name(c)}
-              </T>
-              <View style={[styles.underline, { backgroundColor: active ? th.green : 'transparent' }]} />
+            <Pressable
+              key={c.slug}
+              onLayout={(e) => (tabX.current[c.slug] = e.nativeEvent.layout.x)}
+              onPress={() => {
+                setTab(c.slug);
+                tabsRef.current?.scrollTo({ x: Math.max(0, (tabX.current[c.slug] ?? 0) - 24), animated: true });
+              }}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: active }}
+              style={[styles.tabPill, active ? { backgroundColor: th.green, borderColor: th.green } : null]}
+            >
+              {c.slug === 'breaking' ? <View style={[styles.liveDot, { backgroundColor: active ? '#fff' : th.red }]} /> : null}
+              <T bold={active} size={15} color="#fff" style={{ lineHeight: 24 }}>{name(c)}</T>
             </Pressable>
           );
         })}
@@ -119,6 +129,9 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: 12 },
   overlay: { position: 'absolute', left: 0, right: 0, top: 0, elevation: 20, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 8 },
   row: { flexDirection: 'row', alignItems: 'center' },
-  tab: { marginRight: 18, alignItems: 'center' },
-  underline: { height: 3, width: '100%', borderRadius: 2, marginTop: 4 },
+  tabPill: {
+    flexDirection: 'row', alignItems: 'center', marginRight: 8, paddingHorizontal: 14, paddingVertical: 5,
+    borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.14)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.22)',
+  },
+  liveDot: { width: 8, height: 8, borderRadius: 4, marginRight: 6 },
 });
