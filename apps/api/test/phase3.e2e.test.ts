@@ -175,3 +175,39 @@ describe('Shared story web page', () => {
     expect(r.text).toContain('&lt;script&gt;');
   });
 });
+
+describe('Newsroom page and photo upload', () => {
+  it('serves the newsroom page, its script and the Telugu font', async () => {
+    const page = await http.get('/newsroom').expect(200);
+    expect(page.text).toContain('/newsroom/app.js');
+    await http.get('/newsroom/app.js').expect(200);
+    await http.get('/fonts/NotoSansTelugu_400Regular.ttf').expect(200);
+    await http.get('/fonts/secret.ttf').expect(404);
+  });
+
+  it('staff upload a photo: it is resized to JPEG, GPS removed, and can be used as the story photo', async () => {
+    const sharp = (await import('sharp')).default;
+    // a 3000px photo carrying GPS location data
+    const big = await sharp({ create: { width: 3000, height: 2000, channels: 3, background: '#3a7' } })
+      .withExif({ IFD0: { Make: 'TestPhone' }, IFD3: { GPSLatitudeRef: 'N', GPSLatitude: '14/1 41/1 0/1' } }).jpeg().toBuffer();
+    const r = await http.post(api('/newsroom/media')).set(as(admin)).attach('file', big, 'photo.jpg').expect(201);
+    expect(r.body.url).toMatch(/\/media\/[a-f0-9]{32}\.jpg$/);
+    const file = await http.get(new URL(r.body.url).pathname).expect(200);
+    const meta = await sharp(file.body).metadata();
+    expect(meta.format).toBe('jpeg');
+    expect(Math.max(meta.width!, meta.height!)).toBe(1280);
+    expect(meta.exif).toBeUndefined(); // no location / camera data left
+
+    const story = await http.patch(api(`/newsroom/articles/${storyId}`)).set(as(admin))
+      .send({ heroImageUrl: r.body.url, heroImageCredit: 'MAVY NEWS', correctionNote: 'Added photo' }).expect(200);
+    expect(story.body.heroImageUrl).toBe(r.body.url);
+  });
+
+  it('rejects non-photos, readers and guessed file names', async () => {
+    await http.post(api('/newsroom/media')).set(as(admin)).attach('file', Buffer.from('not an image'), 'x.jpg').expect(400);
+    await http.post(api('/newsroom/media')).set(as(admin)).expect(400);
+    await http.post(api('/newsroom/media')).set(as(reader)).attach('file', Buffer.from('x'), 'x.jpg').expect(403);
+    await http.get('/media/../../etc/passwd').expect(404);
+    await http.get('/media/0123456789abcdef0123456789abcdef.jpg').expect(404);
+  });
+});

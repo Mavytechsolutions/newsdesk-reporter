@@ -5,6 +5,7 @@
 | What | Address |
 |---|---|
 | **Download the app (APK)** | http://194.238.17.81:8475 (open on your phone) |
+| **Newsroom (add stories)** | http://194.238.17.81:8474/newsroom |
 | News server | http://194.238.17.81:8474/api/v1/health |
 | Newsroom admin login | admin@mavynews.in (password: in hPanel → VPS → Docker Manager → **mavy-news** → Environment → `ADMIN_PASSWORD`) |
 

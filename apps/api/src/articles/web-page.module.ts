@@ -39,7 +39,9 @@ class StoryPageController {
 <meta property="og:title" content="${esc(t.headline)}"><meta property="og:description" content="${esc(t.summary)}">
 <meta property="og:url" content="${esc(url)}">${a.heroImageUrl ? `<meta property="og:image" content="${esc(a.heroImageUrl)}"><meta name="twitter:card" content="summary_large_image">` : ''}
 <style>
-body{margin:0;font-family:'Noto Sans Telugu','Noto Sans',system-ui,sans-serif;background:#F4F6FA;color:#0B1220}
+@font-face{font-family:'MAVY Telugu';src:url(/fonts/NotoSansTelugu_400Regular.ttf) format('truetype');font-weight:400;font-display:swap}
+@font-face{font-family:'MAVY Telugu';src:url(/fonts/NotoSansTelugu_700Bold.ttf) format('truetype');font-weight:700;font-display:swap}
+body{margin:0;font-family:'MAVY Telugu','Noto Sans Telugu','Noto Sans',system-ui,sans-serif;background:#F4F6FA;color:#0B1220}
 header{background:#0B1F3A;color:#fff;padding:14px 16px;font-weight:800;letter-spacing:1px}header b{color:#16A34A}
 main{max-width:720px;margin:0 auto;background:#fff;min-height:100vh}
 img{width:100%;max-height:420px;object-fit:cover;display:block}
@@ -61,7 +63,7 @@ ${config.appDownloadUrl ? `<a class="app" href="${esc(config.appDownloadUrl)}">ð
       .status(200)
       .type('html')
       .setHeader('Cache-Control', 'public, max-age=300')
-      .setHeader('Content-Security-Policy', "default-src 'none'; img-src * data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'")
+      .setHeader('Content-Security-Policy', "default-src 'none'; img-src * data:; font-src 'self'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'")
       .send(html);
   }
 }

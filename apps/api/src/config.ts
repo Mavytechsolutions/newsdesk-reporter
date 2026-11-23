@@ -31,6 +31,8 @@ export const config = {
   publicWebUrl: (process.env.PUBLIC_WEB_URL ?? `http://localhost:${num('PORT', 4000)}`).replace(/\/$/, ''),
   /** Where people can get the app (shown on shared story pages) */
   appDownloadUrl: process.env.APP_DOWNLOAD_URL ?? '',
+  /** Folder where uploaded photos are stored */
+  mediaDir: process.env.MEDIA_DIR ?? './media',
 };
 
 if (config.env === 'production') {

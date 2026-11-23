@@ -1,5 +1,5 @@
 # MAVY NEWS server + database. Hostinger VPS project "mavy-news". Separate from apbja and rentipa.
-# Data: /var/lib/mavy-news/db. Code: fresh copy from GitHub on every restart.
+# Data: /var/lib/mavy-news/db (database) and /var/lib/mavy-news/media (uploaded photos). Code: fresh copy from GitHub on every restart.
 services:
   db:
     image: postgres:16-alpine
@@ -36,4 +36,7 @@ services:
       - CORS_ORIGINS=http://194.238.17.81:8474
       - PUBLIC_WEB_URL=http://194.238.17.81:8474
       - APP_DOWNLOAD_URL=http://194.238.17.81:8475
+      - MEDIA_DIR=/data/media
+    volumes:
+      - /var/lib/mavy-news/media:/data/media
     command: ["sh", "-c", "apk add --no-cache git >/dev/null && rm -rf /src && git clone -q --depth 1 -b mavy-news-app https://github.com/Mavytechsolutions/newsdesk-reporter /src && exec sh /src/deploy/api-run.sh"]

@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="te">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>MAVY NEWS · Newsroom</title>
+<style>
+@font-face{font-family:'MAVY Telugu';src:url(/fonts/NotoSansTelugu_400Regular.ttf) format('truetype');font-weight:400;font-display:swap}
+@font-face{font-family:'MAVY Telugu';src:url(/fonts/NotoSansTelugu_700Bold.ttf) format('truetype');font-weight:700;font-display:swap}
+:root{--navy:#0B1F3A;--green:#16A34A;--red:#D7262E;--bg:#F4F6FA;--card:#fff;--text:#0B1220;--muted:#5B6577;--border:#E3E7EE}
+*{box-sizing:border-box}
+body{margin:0;font-family:'MAVY Telugu','Noto Sans Telugu','Noto Sans',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);font-size:16px}
+header{background:var(--navy);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:5}
+header .logo{font-weight:800;letter-spacing:1px;font-size:19px;flex:1}header .logo b{color:var(--green)}
+header .who{font-size:13px;opacity:.85}
+button{font:inherit;cursor:pointer}
+.btn{border:0;border-radius:12px;padding:13px 18px;font-weight:700;font-size:16px;background:var(--green);color:#fff}
+.btn.out{background:transparent;color:var(--text);border:1.5px solid var(--border)}
+.btn.red{background:var(--red)}.btn.small{padding:7px 12px;font-size:14px;border-radius:9px}
+.btn:disabled{opacity:.5}
+.link{background:none;border:0;color:#fff;text-decoration:underline;font-size:14px}
+main{max-width:760px;margin:0 auto;padding:14px}
+.card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+label{display:block;font-weight:700;font-size:14px;margin:14px 0 6px}
+label small{font-weight:400;color:var(--muted)}
+input[type=text],input[type=email],input[type=password],input[type=datetime-local],textarea,select{width:100%;font:inherit;padding:12px;border:1.5px solid var(--border);border-radius:12px;background:#fff;color:var(--text)}
+textarea{min-height:110px;resize:vertical;line-height:1.6}
+.count{font-size:12px;color:var(--muted);text-align:right;margin-top:4px}.count.bad{color:var(--red);font-weight:700}
+.tabs{display:flex;gap:8px;margin-bottom:14px}
+.tabs button{flex:1;border:0;border-radius:12px;padding:12px;font-weight:700;background:#E9EEF6;color:var(--text)}
+.tabs button.on{background:var(--navy);color:#fff}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:0;border-radius:20px;padding:7px 13px;background:#E9EEF6;font-size:14px}
+.chip.on{background:var(--navy);color:#fff}
+.row{display:flex;gap:10px;align-items:center}
+.row>*{flex:1}
+.check{display:flex;align-items:center;gap:10px;margin-top:14px;font-weight:700}
+.check input{width:22px;height:22px}
+.photo{width:100%;max-height:260px;object-fit:cover;border-radius:12px;margin-top:8px;display:block}
+.msg{padding:12px;border-radius:12px;margin:12px 0;font-weight:600}
+.msg.ok{background:#E7F7EC;color:#0E6B32}.msg.err{background:#FDECEC;color:#A11A21}
+.item{display:flex;gap:12px;align-items:flex-start;border-bottom:1px solid var(--border);padding:12px 0}
+.item:last-child{border-bottom:0}
+.thumb{width:72px;height:56px;border-radius:8px;object-fit:cover;background:var(--navy);flex:none}
+.item h3{font-size:15px;margin:0 0 4px;line-height:1.45}
+.meta{font-size:12px;color:var(--muted)}
+.badge{display:inline-block;font-size:11px;font-weight:700;border-radius:5px;padding:1px 7px;color:#fff;background:var(--muted);margin-right:6px}
+.badge.PUBLISHED{background:var(--green)}.badge.DRAFT{background:#6B7280}.badge.SUBMITTED,.badge.IN_REVIEW{background:#2563EB}
+.badge.APPROVED,.badge.SCHEDULED{background:#7C3AED}.badge.REJECTED,.badge.ARCHIVED{background:var(--red)}.badge.CHANGES_REQUESTED{background:#B45309}
+.actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.hidden{display:none!important}
+.help{font-size:13px;color:var(--muted);line-height:1.5}
+details summary{cursor:pointer;font-weight:700;margin-top:14px}
+.sticky{position:sticky;bottom:0;background:var(--bg);padding:10px 0 14px;display:flex;gap:10px}
+.sticky .btn{flex:1}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">MAVY <b>NEWS</b> · న్యూస్‌రూమ్</div>
+  <span class="who" id="who"></span>
+  <button class="link hidden" id="logout">లాగ్ అవుట్</button>
+</header>
+<main>
+  <!-- LOGIN -->
+  <section id="loginView" class="card hidden">
+    <h2 style="margin-top:0">న్యూస్‌రూమ్ లాగిన్ (Newsroom login)</h2>
+    <form id="loginForm">
+      <label>ఈమెయిల్ (Email)</label>
+      <input type="email" id="email" autocomplete="username" required>
+      <label>పాస్‌వర్డ్ (Password)</label>
+      <input type="password" id="password" autocomplete="current-password" required>
+      <div id="loginMsg"></div>
+      <button class="btn" style="width:100%;margin-top:16px" type="submit">లాగిన్</button>
+    </form>
+  </section>
+
+  <!-- APP -->
+  <section id="appView" class="hidden">
+    <div class="tabs">
+      <button id="tabNew" class="on">✍ కొత్త వార్త</button>
+      <button id="tabList">📋 వార్తలు</button>
+    </div>
+
+    <!-- EDITOR -->
+    <form id="editor" class="card" autocomplete="off">
+      <h2 style="margin:0" id="editorTitle">కొత్త వార్త (New story)</h2>
+      <p class="help" id="editorHelp">తెలుగులో రాయండి. ఫోటో, వర్గం, ప్రాంతం ఎంచుకుని "ఇప్పుడే ప్రచురించండి" నొక్కండి.</p>
+
+      <label>హెడ్‌లైన్ (Headline) *</label>
+      <input type="text" id="teHeadline" maxlength="160" required placeholder="ఉదా: అనంతపురంలో భారీ వర్షం">
+
+      <label>సారాంశం (Short news, 100 పదాల లోపు) *</label>
+      <textarea id="teSummary" maxlength="1200" required placeholder="యాప్‌లో కనిపించే చిన్న వార్త"></textarea>
+      <div class="count" id="teCount">0 / 100 పదాలు</div>
+
+      <label>పూర్తి వార్త (Full story) <small>— ఐచ్ఛికం</small></label>
+      <textarea id="teBody" maxlength="50000" placeholder="ఖాళీగా వదిలితే సారాంశమే పూర్తి వార్తగా చూపిస్తాం"></textarea>
+
+      <label>ఫోటో (Photo)</label>
+      <input type="file" id="photoInput" accept="image/*">
+      <div id="photoMsg" class="help"></div>
+      <img id="photoPreview" class="photo hidden" alt="">
+      <div id="creditWrap" class="hidden">
+        <label>ఫోటో క్రెడిట్ (Photo credit) *</label>
+        <input type="text" id="photoCredit" maxlength="120" value="MAVY NEWS">
+        <button type="button" class="btn out small" id="removePhoto" style="margin-top:8px">ఫోటో తీసివేయి</button>
+      </div>
+
+      <label>వర్గం (Category) *</label>
+      <select id="category" required></select>
+
+      <label>ప్రాంతం (Place) *</label>
+      <select id="district"></select>
+      <p class="help">మొత్తం జిల్లా కోసం జిల్లానే ఉంచండి, లేదా కింద మండలాలు / పట్టణాలు ఎంచుకోండి.</p>
+      <div class="chips" id="places"></div>
+
+      <label class="check"><input type="checkbox" id="breaking"> 🔴 బ్రేకింగ్ న్యూస్ (Breaking)</label>
+
+      <details id="enBox">
+        <summary>English version (optional)</summary>
+        <label>Headline</label><input type="text" id="enHeadline" maxlength="160">
+        <label>Short news (under 100 words)</label><textarea id="enSummary" maxlength="1200"></textarea>
+        <div class="count" id="enCount">0 / 100 words</div>
+        <label>Full story</label><textarea id="enBody" maxlength="50000"></textarea>
+      </details>
+
+      <details>
+        <summary>మరిన్ని (More options)</summary>
+        <label>ట్యాగ్‌లు (Tags) <small>— కామాతో వేరు చేయండి</small></label>
+        <input type="text" id="tags" placeholder="వర్షం, రైతులు">
+        <label>తర్వాత ప్రచురించండి (Schedule)</label>
+        <input type="datetime-local" id="scheduledAt">
+      </details>
+
+      <div id="editorMsg"></div>
+      <div class="sticky">
+        <button type="button" class="btn out" id="saveDraft">డ్రాఫ్ట్ సేవ్</button>
+        <button type="submit" class="btn" id="publishBtn">ఇప్పుడే ప్రచురించండి</button>
+      </div>
+      <button type="button" class="btn out hidden" id="cancelEdit" style="width:100%">రద్దు (Cancel editing)</button>
+    </form>
+
+    <!-- LIST -->
+    <section id="listView" class="card hidden">
+      <div class="row" style="margin-bottom:6px">
+        <select id="statusFilter">
+          <option value="">అన్నీ (All)</option>
+          <option value="PUBLISHED">ప్రచురించినవి (Published)</option>
+          <option value="DRAFT">డ్రాఫ్ట్‌లు (Drafts)</option>
+          <option value="SUBMITTED">సమీక్షకు వచ్చినవి (Submitted)</option>
+          <option value="APPROVED">ఆమోదించినవి (Approved)</option>
+          <option value="SCHEDULED">షెడ్యూల్ (Scheduled)</option>
+          <option value="ARCHIVED">తీసివేసినవి (Taken down)</option>
+        </select>
+        <button class="btn out small" id="refresh" style="flex:none">↻</button>
+      </div>
+      <div id="listMsg"></div>
+      <div id="list"></div>
+    </section>
+  </section>
+</main>
+<script src="/newsroom/app.js"></script>
+</body>
+</html>

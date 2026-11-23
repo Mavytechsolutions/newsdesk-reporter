@@ -23,7 +23,7 @@ export class CreateArticleDto {
   @IsOptional() @IsBoolean() isFeatured?: boolean;
   @IsOptional() @IsIn(['STAFF', 'AGENCY', 'AI_ASSISTED', 'CITIZEN']) sourceType?: 'STAFF' | 'AGENCY' | 'AI_ASSISTED' | 'CITIZEN';
   @IsOptional() @IsString() @MaxLength(120) sourceName?: string;
-  @IsOptional() @IsUrl({ protocols: ['https'] }) heroImageUrl?: string;
+  @IsOptional() @IsUrl({ protocols: ['http', 'https'], require_tld: false }) heroImageUrl?: string;
   @IsOptional() @IsString() @MaxLength(120) heroImageCredit?: string;
   @IsOptional() @IsISO8601() scheduledAt?: string;
 }
@@ -36,7 +36,7 @@ export class UpdateArticleDto {
   @IsOptional() @IsBoolean() isBreaking?: boolean;
   @IsOptional() @IsBoolean() isFeatured?: boolean;
   @IsOptional() @IsString() @MaxLength(120) sourceName?: string;
-  @IsOptional() @IsUrl({ protocols: ['https'] }) heroImageUrl?: string;
+  @IsOptional() @IsUrl({ protocols: ['http', 'https'], require_tld: false }) heroImageUrl?: string;
   @IsOptional() @IsString() @MaxLength(120) heroImageCredit?: string;
   @IsOptional() @IsISO8601() scheduledAt?: string | null;
   /** Required when editing an already-published story — shown to readers as a correction note. */
