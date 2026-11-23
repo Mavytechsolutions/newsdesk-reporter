@@ -1,8 +1,8 @@
 import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Injectable, Module, Patch, Put } from '@nestjs/common';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import { ArrayMaxSize, IsArray, IsBoolean, IsIn, IsOptional, IsString, IsUrl, IsUUID, MaxLength } from 'class-validator';
 import { Db, InjectDb } from '../db/db.module';
-import { bookmarks, categories, likes, readEvents, userCategories, userLocations, users } from '../db/schema';
+import { bookmarks, categories, comments, dislikes, likes, readEvents, userCategories, userLocations, users } from '../db/schema';
 import { AuthUser, ClientIp, CurrentUser } from '../common/auth.decorators';
 import { AuditService } from '../audit/audit.module';
 import { AuthService } from '../auth/auth.service';
@@ -83,6 +83,10 @@ export class UsersService {
       await tx.delete(userCategories).where(eq(userCategories.userId, userId));
       await tx.delete(bookmarks).where(eq(bookmarks.userId, userId));
       await tx.delete(likes).where(eq(likes.userId, userId));
+      await tx.delete(dislikes).where(eq(dislikes.userId, userId));
+      await tx.update(comments).set({ status: 'HIDDEN' }).where(eq(comments.userId, userId));
+      await tx.execute(sql`update articles a set comment_count = (select count(*) from comments c where c.article_id = a.id and c.status = 'VISIBLE')
+        where a.id in (select article_id from comments where user_id = ${userId})`);
       await tx.delete(readEvents).where(eq(readEvents.userId, userId));
       await this.auth.revokeAll(userId, tx as unknown as Db);
       await tx.update(users).set({

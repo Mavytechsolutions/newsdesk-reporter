@@ -25,6 +25,12 @@ const en = {
   cancel: 'Cancel', confirm: 'Yes, continue', loginRequired: 'Please log in to use this', name: 'Your name', saveBtn: 'Save', guest: 'Guest reader',
   historyEmpty: 'Stories you read will appear here.', version: 'Version',
   server: 'Server address', serverHint: 'For testing: your computer\'s Wi-Fi address, e.g. http://192.168.1.10:4000', serverOk: 'Connected ✓', testSave: 'Test & save', current: 'Now using',
+  dislike: 'Dislike', comments: 'Comments', more: 'More', of: 'of', pages: 'stories',
+  writeComment: 'Write a comment…', send: 'Send', noComments: 'No comments yet. Be the first!', deleteComment: 'Delete your comment?', loginToComment: 'Log in to comment',
+  report: 'Report this story', reportTitle: 'What is wrong with this story?', reportNote: 'Details (optional)', reportSend: 'Send report',
+  reportThanks: 'Thank you. Our editors will review this story.',
+  rFAKE: 'Fake news', rWRONG_INFO: 'Wrong information', rOFFENSIVE: 'Offensive or hateful', rCOPYRIGHT: 'Copyright problem', rPRIVACY: 'Privacy problem', rOTHER: 'Other',
+  openStory: 'Open full story',
   justNow: 'just now', minAgo: 'm ago', hrAgo: 'h ago', dayAgo: 'd ago',
 };
 
@@ -53,6 +59,12 @@ const te: typeof en = {
   cancel: 'రద్దు', confirm: 'అవును', loginRequired: 'దీని కోసం లాగిన్ అవ్వండి', name: 'మీ పేరు', saveBtn: 'సేవ్', guest: 'అతిథి పాఠకుడు',
   historyEmpty: 'మీరు చదివిన వార్తలు ఇక్కడ కనిపిస్తాయి.', version: 'వెర్షన్',
   server: 'సర్వర్ చిరునామా', serverHint: 'పరీక్ష కోసం: మీ కంప్యూటర్ Wi-Fi చిరునామా, ఉదా. http://192.168.1.10:4000', serverOk: 'కనెక్ట్ అయింది ✓', testSave: 'పరీక్షించి సేవ్ చేయండి', current: 'ప్రస్తుతం',
+  dislike: 'నచ్చలేదు', comments: 'వ్యాఖ్యలు', more: 'మరిన్ని', of: '/', pages: 'వార్తలు',
+  writeComment: 'మీ వ్యాఖ్య రాయండి…', send: 'పంపండి', noComments: 'ఇంకా వ్యాఖ్యలు లేవు. మీరే మొదటివారు కండి!', deleteComment: 'మీ వ్యాఖ్యను తొలగించాలా?', loginToComment: 'వ్యాఖ్యానించడానికి లాగిన్ అవ్వండి',
+  report: 'ఈ వార్తపై ఫిర్యాదు', reportTitle: 'ఈ వార్తలో సమస్య ఏమిటి?', reportNote: 'వివరాలు (ఐచ్ఛికం)', reportSend: 'ఫిర్యాదు పంపండి',
+  reportThanks: 'ధన్యవాదాలు. మా ఎడిటర్లు ఈ వార్తను పరిశీలిస్తారు.',
+  rFAKE: 'తప్పుడు వార్త', rWRONG_INFO: 'తప్పు సమాచారం', rOFFENSIVE: 'అభ్యంతరకరం / ద్వేషపూరితం', rCOPYRIGHT: 'కాపీరైట్ సమస్య', rPRIVACY: 'గోప్యత సమస్య', rOTHER: 'ఇతర',
+  openStory: 'పూర్తి వార్త చూడండి',
   justNow: 'ఇప్పుడే', minAgo: 'ని. క్రితం', hrAgo: 'గం. క్రితం', dayAgo: 'రో. క్రితం',
 };
 

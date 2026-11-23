@@ -39,7 +39,7 @@ export const useSettings = create<SettingsState>()(
       onboarded: false,
       language: 'te',
       theme: 'system',
-      feedMode: 'compact',
+      feedMode: 'immersive',
       places: [],
       recentSearches: [],
       saved: [],
@@ -64,6 +64,9 @@ export const useSettings = create<SettingsState>()(
     }),
     {
       name: 'mavy-settings',
+      version: 2,
+      // v2: the full-screen swipe card (Way2News style) becomes the default view
+      migrate: (state: any, version) => (version < 2 ? { ...state, feedMode: 'immersive' } : state),
       storage: createJSONStorage(() => AsyncStorage),
       partialize: ({ hydrated, ...rest }) => rest,
       onRehydrateStorage: () => () => useSettings.setState({ hydrated: true }),

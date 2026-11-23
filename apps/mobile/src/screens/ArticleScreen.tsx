@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import * as Speech from 'expo-speech';
 import { Ionicons } from '@expo/vector-icons';
-import { useArticle, useLike, markRead, shareArticle, useToggleSave } from '../api/hooks';
+import { useArticle, useReaction, markRead, shareArticle, useToggleSave } from '../api/hooks';
+import { MoreSheet } from '../components/StoryPage';
 import { HeroImage, Meta } from '../components/NewsCard';
 import { Chip, ErrorState, FeedSkeleton, T } from '../components/ui';
 import { useTheme } from '../theme';
@@ -36,9 +37,8 @@ function ArticleBody({ a, lang, setLang, navigation }: { a: ArticleCard; lang: '
   const [speaking, setSpeaking] = useState(false);
   const saved = useSettings((s) => s.saved.some((x) => x.id === a.id));
   const toggleSave = useToggleSave();
-  const like = useLike(() => navigation.navigate('Login'));
-  const liked = like.isSuccess ? like.data.liked : !!a.liked;
-  const likeCount = like.isSuccess ? like.data.likeCount : a.likeCount;
+  const r = useReaction(a, () => navigation.navigate('Login'));
+  const [menu, setMenu] = useState(false);
 
   const listen = () => {
     if (speaking) {
@@ -95,10 +95,12 @@ function ArticleBody({ a, lang, setLang, navigation }: { a: ArticleCard; lang: '
         </View>
 
         <View style={[styles.actionBar, { borderColor: th.border }]}>
-          <Action icon={liked ? 'heart' : 'heart-outline'} color={liked ? th.red : th.text} label={`${likeCount || ''} ${t.like}`} onPress={() => like.mutate({ id: a.id, liked: !liked })} />
-          <Action icon={saved ? 'bookmark' : 'bookmark-outline'} color={saved ? th.green : th.text} label={saved ? t.saved : t.save} onPress={() => toggleSave(a, !saved)} />
+          <Action icon={r.liked ? 'thumbs-up' : 'thumbs-up-outline'} color={r.liked ? th.green : th.text} label={`${r.likeCount || ''} ${t.like}`} onPress={r.like} />
+          <Action icon={r.disliked ? 'thumbs-down' : 'thumbs-down-outline'} color={r.disliked ? th.red : th.text} label={`${r.dislikeCount || ''} ${t.dislike}`} onPress={r.dislike} />
           <Action icon="logo-whatsapp" color="#25D366" label={t.whatsapp} onPress={() => shareArticle(a, 'whatsapp')} />
-          <Action icon="share-social-outline" color={th.text} label={t.share} onPress={() => shareArticle(a)} />
+          <Action icon="chatbox-ellipses-outline" color={th.text} label={`${a.commentCount || ''} ${t.comments}`} onPress={() => navigation.navigate('Comments', { articleId: a.id, headline: a.headline })} />
+          <Action icon={saved ? 'bookmark' : 'bookmark-outline'} color={saved ? th.green : th.text} label={saved ? t.saved : t.save} onPress={() => toggleSave(a, !saved)} />
+          <Action icon="ellipsis-horizontal" color={th.text} label={t.more} onPress={() => setMenu(true)} />
         </View>
 
         {a.related?.length ? (
@@ -116,6 +118,7 @@ function ArticleBody({ a, lang, setLang, navigation }: { a: ArticleCard; lang: '
           </>
         ) : null}
       </View>
+      <MoreSheet a={a} visible={menu} onClose={() => setMenu(false)} />
     </ScrollView>
   );
 }

@@ -3,7 +3,8 @@ import { ActivityIndicator, FlatList, LayoutChangeEvent, RefreshControl, View } 
 import type { InfiniteData, UseInfiniteQueryResult } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { Page, ArticleCard } from '../api/types';
-import { NewsCard, ImmersiveCard } from './NewsCard';
+import { NewsCard } from './NewsCard';
+import { StoryPage } from './StoryPage';
 import { EmptyState, ErrorState, FeedSkeleton } from './ui';
 import { useTheme } from '../theme';
 import { useT } from '../i18n';
@@ -24,19 +25,23 @@ export function FeedList({ query, mode = 'compact', header, empty }: {
   const t = useT();
   const [height, setHeight] = useState(0);
   const items = useMemo(() => query.data?.pages.flatMap((p) => p.items) ?? [], [query.data]);
+  const total = query.data?.pages[0]?.total;
   const open = (a: ArticleCard) => nav.navigate('Article', { slug: a.slug });
 
-  if (query.isPending) return <View style={{ flex: 1 }}>{header}<FeedSkeleton /></View>;
-  if (query.isError && !items.length) return <View style={{ flex: 1 }}>{header}<ErrorState error={query.error} onRetry={() => query.refetch()} /></View>;
-
-  const immersive = mode === 'immersive' && height > 0;
+  const immersive = mode === 'immersive';
+  // One wrapper that is always mounted, so the screen height is known before the first story is shown.
   return (
-    <View style={{ flex: 1 }} onLayout={(e: LayoutChangeEvent) => setHeight(e.nativeEvent.layout.height)}>
+    <View style={{ flex: 1 }} onLayout={(e: LayoutChangeEvent) => setHeight(Math.round(e.nativeEvent.layout.height))}>
+      {query.isPending || (immersive && height === 0) ? (
+        <>{immersive ? null : header}<FeedSkeleton /></>
+      ) : query.isError && !items.length ? (
+        <>{header}<ErrorState error={query.error} onRetry={() => query.refetch()} /></>
+      ) : (
       <FlatList
         data={items}
         keyExtractor={(a) => a.id}
-        renderItem={({ item }) =>
-          immersive ? <ImmersiveCard a={item} height={height} onPress={() => open(item)} /> : <NewsCard a={item} onPress={() => open(item)} />
+        renderItem={({ item, index }) =>
+          immersive ? <StoryPage a={item} height={height} index={index} total={total} /> : <NewsCard a={item} onPress={() => open(item)} />
         }
         ListHeaderComponent={immersive ? undefined : header}
         ListEmptyComponent={empty ?? <EmptyState icon="newspaper-outline" title={t.emptyFeed} hint={t.emptyFeedHint} />}
@@ -54,6 +59,7 @@ export function FeedList({ query, mode = 'compact', header, empty }: {
         windowSize={7}
         removeClippedSubviews
       />
+      )}
     </View>
   );
 }

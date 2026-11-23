@@ -18,6 +18,7 @@ import { ExploreScreen } from './src/screens/ExploreScreen';
 import { ListFeedScreen } from './src/screens/ListFeedScreen';
 import { PlacesScreen } from './src/screens/PlacesScreen';
 import { OnboardingScreen } from './src/screens/OnboardingScreen';
+import { CommentsScreen } from './src/screens/CommentsScreen';
 import { BookmarksScreen, HistoryScreen, LoginScreen, ProfileScreen, TopicsScreen, VideosScreen } from './src/screens/OtherScreens';
 
 const queryClient = new QueryClient({
@@ -95,6 +96,7 @@ function Root() {
           <Stack.Screen name="Places" component={PlacesScreen} options={{ title: t.myPlaces }} />
           <Stack.Screen name="Login" component={LoginScreen} options={{ title: '', presentation: 'modal' }} />
           <Stack.Screen name="Topics" component={TopicsScreen} options={{ title: t.myTopics }} />
+          <Stack.Screen name="Comments" component={CommentsScreen} />
           <Stack.Screen name="History" component={HistoryScreen} options={{ title: t.history }} />
         </Stack.Navigator>
       )}

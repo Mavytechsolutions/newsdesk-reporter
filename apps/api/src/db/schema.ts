@@ -19,6 +19,9 @@ export const articleStatusEnum = pgEnum('article_status', [
   'DRAFT', 'SUBMITTED', 'IN_REVIEW', 'CHANGES_REQUESTED', 'APPROVED',
   'SCHEDULED', 'PUBLISHED', 'REJECTED', 'ARCHIVED',
 ]);
+export const commentStatusEnum = pgEnum('comment_status', ['VISIBLE', 'HIDDEN']);
+export const reportReasonEnum = pgEnum('report_reason', ['FAKE', 'WRONG_INFO', 'OFFENSIVE', 'COPYRIGHT', 'PRIVACY', 'OTHER']);
+export const reportStatusEnum = pgEnum('report_status', ['OPEN', 'RESOLVED', 'REJECTED']);
 export const sourceTypeEnum = pgEnum('source_type', ['STAFF', 'CITIZEN', 'AGENCY', 'AI_ASSISTED']);
 
 export type Role = (typeof roleEnum.enumValues)[number];
@@ -135,6 +138,8 @@ export const articles = pgTable('articles', {
   viewCount: integer('view_count').notNull().default(0),
   likeCount: integer('like_count').notNull().default(0),
   shareCount: integer('share_count').notNull().default(0),
+  dislikeCount: integer('dislike_count').notNull().default(0),
+  commentCount: integer('comment_count').notNull().default(0),
   createdAt: ts('created_at').notNull().defaultNow(),
   updatedAt: ts('updated_at').notNull().defaultNow(),
 }, (t) => ({
@@ -210,6 +215,37 @@ export const readEvents = pgTable('read_events', {
   articleId: uuid('article_id').notNull().references(() => articles.id, { onDelete: 'cascade' }),
   readAt: ts('read_at').notNull().defaultNow(),
 }, (t) => ({ pk: primaryKey({ columns: [t.userId, t.articleId] }), userIdx: index('read_user_idx').on(t.userId, t.readAt) }));
+
+export const dislikes = pgTable('dislikes', {
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  articleId: uuid('article_id').notNull().references(() => articles.id, { onDelete: 'cascade' }),
+  createdAt: ts('created_at').notNull().defaultNow(),
+}, (t) => ({ pk: primaryKey({ columns: [t.userId, t.articleId] }) }));
+
+export const comments = pgTable('comments', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  articleId: uuid('article_id').notNull().references(() => articles.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  body: text('body').notNull(),
+  status: commentStatusEnum('status').notNull().default('VISIBLE'),
+  hiddenBy: uuid('hidden_by'),
+  createdAt: ts('created_at').notNull().defaultNow(),
+}, (t) => ({ artIdx: index('comments_article_idx').on(t.articleId, t.createdAt), userIdx: index('comments_user_idx').on(t.userId) }));
+
+/** Reader complaints about a story (IT Rules grievance channel). */
+export const reports = pgTable('reports', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  articleId: uuid('article_id').notNull().references(() => articles.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  reason: reportReasonEnum('reason').notNull(),
+  note: text('note'),
+  status: reportStatusEnum('status').notNull().default('OPEN'),
+  resolution: text('resolution'),
+  handledBy: uuid('handled_by'),
+  ip: text('ip'),
+  createdAt: ts('created_at').notNull().defaultNow(),
+  resolvedAt: ts('resolved_at'),
+}, (t) => ({ statusIdx: index('reports_status_idx').on(t.status, t.createdAt) }));
 
 // ---- relations (used by query builder) ----
 export const articlesRelations = relations(articles, ({ many, one }) => ({

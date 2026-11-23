@@ -5,7 +5,7 @@ import { and, desc, eq, inArray, lte, ne, or, lt, sql, SQL } from 'drizzle-orm';
 import { Db, InjectDb } from '../db/db.module';
 import {
   articleLocations, articles, articleStatusHistory, articleTags, articleTranslations, categories, locations,
-  staffAssignments, bookmarks, likes, ArticleStatus, Language, Role,
+  staffAssignments, bookmarks, likes, dislikes, ArticleStatus, Language, Role,
 } from '../db/schema';
 import { AuthUser } from '../common/auth.decorators';
 import { slugify, wordCount } from '../common/text';
@@ -249,6 +249,8 @@ export class ArticlesService implements OnModuleInit, OnModuleDestroy {
       isBreaking: a.isBreaking,
       isFeatured: a.isFeatured,
       likeCount: a.likeCount,
+      dislikeCount: a.dislikeCount,
+      commentCount: a.commentCount,
       shareCount: a.shareCount,
       heroImageUrl: a.heroImageUrl,
       heroImageCredit: a.heroImageCredit,
@@ -279,6 +281,7 @@ export class ArticlesService implements OnModuleInit, OnModuleDestroy {
   async page(where: SQL[], q: { cursor?: string; limit?: number }, lang: Language, userId?: string) {
     const limit = q.limit ?? 20;
     where = [eq(articles.status, 'PUBLISHED'), ...where];
+    const total = q.cursor ? undefined : (await this.db.select({ n: sql<number>`count(*)::int` }).from(articles).where(and(...where)))[0].n;
     if (q.cursor) {
       const [ts, cid] = Buffer.from(q.cursor, 'base64url').toString().split('|');
       const d = new Date(ts);
@@ -291,6 +294,7 @@ export class ArticlesService implements OnModuleInit, OnModuleDestroy {
     const flags = await this.flags(idRows.map((r) => r.id), userId);
     const last = idRows[idRows.length - 1];
     return {
+      total,
       items: idRows.map((r) => ({ ...this.toCard(map.get(r.id)!, lang), ...flags(r.id) })),
       nextCursor: idRows.length === limit && last ? Buffer.from(`${last.publishedAt!.toISOString()}|${last.id}`).toString('base64url') : null,
     };
@@ -299,12 +303,13 @@ export class ArticlesService implements OnModuleInit, OnModuleDestroy {
   /** Returns a lookup of { liked, bookmarked } for the reader. */
   async flags(ids: string[], userId?: string) {
     if (!userId || !ids.length || userId.startsWith('guest:')) return (_: string) => ({});
-    const [b, l] = await Promise.all([
+    const [b, l, d] = await Promise.all([
       this.db.select({ id: bookmarks.articleId }).from(bookmarks).where(and(eq(bookmarks.userId, userId), inArray(bookmarks.articleId, ids))),
       this.db.select({ id: likes.articleId }).from(likes).where(and(eq(likes.userId, userId), inArray(likes.articleId, ids))),
+      this.db.select({ id: dislikes.articleId }).from(dislikes).where(and(eq(dislikes.userId, userId), inArray(dislikes.articleId, ids))),
     ]);
-    const bs = new Set(b.map((x) => x.id)), ls = new Set(l.map((x) => x.id));
-    return (id: string) => ({ bookmarked: bs.has(id), liked: ls.has(id) });
+    const bs = new Set(b.map((x) => x.id)), ls = new Set(l.map((x) => x.id)), ds = new Set(d.map((x) => x.id));
+    return (id: string) => ({ bookmarked: bs.has(id), liked: ls.has(id), disliked: ds.has(id) });
   }
 
   async publicGet(slug: string, lang: Language = 'te', userId?: string) {

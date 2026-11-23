@@ -1,7 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
 import type { ArticleCard } from '../api/types';
 import { useTheme } from '../theme';
 import { T, IconBtn } from './ui';
@@ -72,36 +71,10 @@ export function NewsCard({ a, onPress }: { a: ArticleCard; onPress: () => void }
   );
 }
 
-/** Full-screen card for the immersive swipe feed (Inshorts style). */
-export function ImmersiveCard({ a, height, onPress }: { a: ArticleCard; height: number; onPress: () => void }) {
-  const th = useTheme();
-  const t = useT();
-  return (
-    <View style={{ height, backgroundColor: th.card }}>
-      <HeroImage a={a} height={Math.round(height * 0.42)} />
-      <View style={{ flex: 1, padding: 18 }}>
-        <Meta a={a} />
-        <T bold size={21} style={{ marginTop: 8 }}>{a.headline}</T>
-        <T size={16} style={{ marginTop: 10 }} numberOfLines={8}>{a.summary}</T>
-        <View style={{ flex: 1 }} />
-        <T size={12} color={th.muted}>{a.reporter ? `${t.by}: ${a.reporter} · ` : ''}{a.sourceLabel}</T>
-        <View style={[styles.footer, { marginTop: 6 }]}>
-          <Pressable onPress={onPress} accessibilityRole="button" style={styles.readMore}>
-            <T bold color={th.green}>{t.readMore}</T>
-            <Ionicons name="arrow-forward" size={16} color={th.green} style={{ marginLeft: 4 }} />
-          </Pressable>
-          <CardActions a={a} />
-        </View>
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   card: { borderRadius: 16, overflow: 'hidden', marginHorizontal: 12, marginBottom: 14, elevation: 1, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
   metaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 },
   badge: { paddingHorizontal: 7, paddingVertical: 1, borderRadius: 4 },
   footer: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
   actions: { flexDirection: 'row', alignItems: 'center' },
-  readMore: { flexDirection: 'row', alignItems: 'center', flex: 1 },
 });

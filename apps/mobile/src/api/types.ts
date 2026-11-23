@@ -32,6 +32,8 @@ export interface ArticleCard {
   isBreaking: boolean;
   isFeatured: boolean;
   likeCount: number;
+  dislikeCount: number;
+  commentCount: number;
   shareCount: number;
   heroImageUrl: string | null;
   heroImageCredit: string | null;
@@ -39,6 +41,7 @@ export interface ArticleCard {
   updatedAt: string;
   shareUrl: string;
   liked?: boolean;
+  disliked?: boolean;
   bookmarked?: boolean;
   related?: ArticleCard[];
 }
@@ -46,6 +49,7 @@ export interface ArticleCard {
 export interface Page {
   items: ArticleCard[];
   nextCursor: string | null;
+  total?: number;
   needsLocation?: boolean;
   didYouMean?: string | null;
 }
@@ -57,4 +61,12 @@ export interface Me {
   language: Lang;
   locations: (Place & { isPrimary: boolean })[];
   categories: Category[];
+}
+
+export interface Comment {
+  id: string;
+  body: string;
+  author: string;
+  createdAt: string;
+  mine: boolean;
 }

@@ -16,6 +16,7 @@ import {
 import { AuthUser, CurrentUser, Public } from '../common/auth.decorators';
 import { ArticlesService } from './articles.service';
 import { ArticlesModule } from './articles.module';
+import { CommunityModule, CommunityService } from './community.module';
 
 const csvUuids = () => Transform(({ value }) => (typeof value === 'string' ? value.split(',').filter(Boolean) : value));
 
@@ -49,7 +50,7 @@ class PageQuery {
 
 @Injectable()
 export class FeedService {
-  constructor(@InjectDb() private readonly db: Db, private readonly articlesSvc: ArticlesService) {}
+  constructor(@InjectDb() private readonly db: Db, private readonly articlesSvc: ArticlesService, private readonly community: CommunityService) {}
 
   private withinAny(locationIds: string[]): SQL {
     return exists(this.db.select({ x: sql`1` }).from(articleLocations)
@@ -175,19 +176,8 @@ export class FeedService {
   }
 
   async like(user: AuthUser, articleId: string, liked: boolean) {
-    const userId = this.reader(user);
-    await this.requirePublished(articleId);
-    return this.db.transaction(async (tx) => {
-      if (liked) {
-        const ins = await tx.insert(likes).values({ userId, articleId }).onConflictDoNothing().returning();
-        if (ins.length) await tx.update(articles).set({ likeCount: sql`${articles.likeCount} + 1` }).where(eq(articles.id, articleId));
-      } else {
-        const del = await tx.delete(likes).where(and(eq(likes.userId, userId), eq(likes.articleId, articleId))).returning();
-        if (del.length) await tx.update(articles).set({ likeCount: sql`greatest(${articles.likeCount} - 1, 0)` }).where(eq(articles.id, articleId));
-      }
-      const [a] = await tx.select({ likeCount: articles.likeCount }).from(articles).where(eq(articles.id, articleId));
-      return { liked, likeCount: a.likeCount };
-    });
+    const r = await this.community.react(user, articleId, liked ? 'like' : 'none');
+    return { liked: r.liked, likeCount: r.likeCount };
   }
 
   async share(articleId: string) {
@@ -243,5 +233,5 @@ class FeedController {
   @Delete('me/personalization') @HttpCode(200) reset(@CurrentUser() u: AuthUser) { return this.svc.resetPersonalisation(u); }
 }
 
-@Module({ imports: [ArticlesModule], controllers: [FeedController], providers: [FeedService] })
+@Module({ imports: [ArticlesModule, CommunityModule], controllers: [FeedController], providers: [FeedService] })
 export class FeedModule {}

@@ -1,7 +1,8 @@
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Alert, Linking, Share } from 'react-native';
 import { api, qs, useAuth } from './client';
-import type { ArticleCard, Category, Me, Page, Place } from './types';
+import type { ArticleCard, Category, Comment, Me, Page, Place } from './types';
+import { useEffect, useState } from 'react';
 import { useSettings } from '../store/settings';
 
 /** Pages loaded 15 at a time — never the whole feed (low-bandwidth friendly). */
@@ -87,23 +88,6 @@ export function useToggleSave() {
   };
 }
 
-export function useLike(onNeedLogin: () => void) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, liked }: { id: string; liked: boolean }) => {
-      if (!useAuth.getState().loggedIn) {
-        onNeedLogin();
-        return Promise.reject(new Error('login'));
-      }
-      return api<{ liked: boolean; likeCount: number }>(`/articles/${id}/like`, { method: 'POST', body: { liked } });
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['article'] });
-      qc.invalidateQueries({ queryKey: ['feed'] });
-    },
-  });
-}
-
 export async function shareArticle(a: ArticleCard, via: 'any' | 'whatsapp' = 'any') {
   const text = `${a.headline}\n\n${a.summary}\n\n${a.shareUrl}\n— MAVY NEWS`;
   api(`/articles/${a.id}/share`, { method: 'POST' }).catch(() => undefined);
@@ -120,4 +104,47 @@ export async function shareArticle(a: ArticleCard, via: 'any' | 'whatsapp' = 'an
 
 export function markRead(id: string) {
   if (useAuth.getState().loggedIn) api(`/articles/${id}/read`, { method: 'POST' }).catch(() => undefined);
+}
+
+/** Like / dislike with instant feedback; asks guests to log in. */
+export function useReaction(a: ArticleCard, onNeedLogin: () => void) {
+  const qc = useQueryClient();
+  const [state, setState] = useState({ liked: !!a.liked, disliked: !!a.disliked, likeCount: a.likeCount, dislikeCount: a.dislikeCount });
+  // keep in step when the feed reloads fresh numbers
+  useEffect(() => {
+    setState({ liked: !!a.liked, disliked: !!a.disliked, likeCount: a.likeCount, dislikeCount: a.dislikeCount });
+  }, [a.id, a.liked, a.disliked, a.likeCount, a.dislikeCount]);
+  const set = async (want: 'like' | 'dislike') => {
+    if (!useAuth.getState().loggedIn) return onNeedLogin();
+    const reaction = (want === 'like' && state.liked) || (want === 'dislike' && state.disliked) ? 'none' : want;
+    const prev = state;
+    setState({
+      liked: reaction === 'like',
+      disliked: reaction === 'dislike',
+      likeCount: prev.likeCount + (reaction === 'like' ? 1 : 0) - (prev.liked ? 1 : 0),
+      dislikeCount: prev.dislikeCount + (reaction === 'dislike' ? 1 : 0) - (prev.disliked ? 1 : 0),
+    });
+    try {
+      const r = await api<{ liked: boolean; disliked: boolean; likeCount: number; dislikeCount: number }>(`/articles/${a.id}/reaction`, { method: 'POST', body: { reaction } });
+      setState({ liked: r.liked, disliked: r.disliked, likeCount: r.likeCount, dislikeCount: r.dislikeCount });
+      qc.invalidateQueries({ queryKey: ['article'] });
+    } catch (e: any) {
+      setState(prev);
+      Alert.alert('MAVY NEWS', e?.message ?? 'Could not save');
+    }
+  };
+  return { ...state, like: () => set('like'), dislike: () => set('dislike') };
+}
+
+export function useComments(articleId: string) {
+  return useInfiniteQuery({
+    queryKey: ['comments', articleId],
+    queryFn: ({ pageParam }) => api<{ items: Comment[]; nextCursor: string | null }>(`/articles/${articleId}/comments${qs({ cursor: pageParam })}`),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (last) => last.nextCursor ?? undefined,
+  });
+}
+
+export function reportArticle(id: string, reason: string, note?: string) {
+  return api<{ received: boolean }>(`/articles/${id}/report`, { method: 'POST', body: { reason, note: note?.trim() || undefined } });
 }
