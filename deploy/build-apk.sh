@@ -24,7 +24,7 @@ export JAVA_HOME=$(dirname "$(dirname "$(readlink -f "$(which javac)")")")
 if [ ! -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
   echo "== downloading Android SDK tools"
   mkdir -p "$ANDROID_HOME/cmdline-tools"
-  curl -fsSL -o /tmp/tools.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+  curl -4 -fsSL --retry 8 --retry-delay 5 -o /tmp/tools.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
   unzip -q /tmp/tools.zip -d "$ANDROID_HOME/cmdline-tools"
   mv "$ANDROID_HOME/cmdline-tools/cmdline-tools" "$ANDROID_HOME/cmdline-tools/latest"
 fi
@@ -42,7 +42,13 @@ export EXPO_PUBLIC_API_URL="$API_URL" CI=1
 npx expo prebuild --platform android --no-install --clean
 
 cd android
-printf '\norg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g\nreactNativeArchitectures=arm64-v8a,armeabi-v7a\norg.gradle.parallel=true\n' >> gradle.properties
+# Download Gradle with curl (retries) instead of the wrapper's 10-second timeout, and keep it for next builds.
+DIST=$(grep '^distributionUrl=' gradle/wrapper/gradle-wrapper.properties | cut -d= -f2- | sed 's#\\:#:#g')
+NAME=$(basename "$DIST")
+[ -s "/cache/$NAME" ] || curl -4 -fL --retry 8 --retry-delay 5 --connect-timeout 30 -o "/cache/$NAME" "$DIST"
+sed -i "s#^distributionUrl=.*#distributionUrl=file\\:/cache/$NAME#" gradle/wrapper/gradle-wrapper.properties
+export JAVA_TOOL_OPTIONS="-Djava.net.preferIPv4Stack=true"
+printf '\norg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g\nreactNativeArchitectures=arm64-v8a,armeabi-v7a\norg.gradle.parallel=true\nsystemProp.org.gradle.internal.http.connectionTimeout=120000\nsystemProp.org.gradle.internal.http.socketTimeout=120000\nsystemProp.org.gradle.internal.repository.max.retries=8\n' >> gradle.properties
 echo "== compiling APK (longest step)"
 ./gradlew assembleRelease --no-daemon --console=plain -q
 
