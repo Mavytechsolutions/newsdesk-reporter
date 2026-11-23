@@ -9,11 +9,11 @@ import { useSettings } from '../store/settings';
 import { shareArticle, useToggleSave } from '../api/hooks';
 
 /** Shown when a story has no photo: brand colour block with the category name. */
-export function HeroImage({ a, height }: { a: ArticleCard; height: number }) {
+export function HeroImage({ a, height, instant }: { a: ArticleCard; height: number; instant?: boolean }) {
   const th = useTheme();
   const name = useName();
   if (a.heroImageUrl)
-    return <Image source={{ uri: a.heroImageUrl }} style={{ width: '100%', height }} contentFit="cover" transition={200} cachePolicy="memory-disk" accessibilityLabel={a.headline} />;
+    return <Image source={{ uri: a.heroImageUrl }} style={{ width: '100%', height }} contentFit="cover" transition={instant ? 0 : 200} priority={instant ? 'high' : 'normal'} cachePolicy="memory-disk" accessibilityLabel={a.headline} />;
   return (
     <View style={{ width: '100%', height, backgroundColor: a.isBreaking ? th.red : th.navy, alignItems: 'center', justifyContent: 'center' }}>
       <T bold color="#fff" size={13} style={{ opacity: 0.7, letterSpacing: 2 }}>MAVY NEWS</T>

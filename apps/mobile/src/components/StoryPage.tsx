@@ -54,7 +54,7 @@ export function StoryPage({ a, height, index, total, onTap }: { a: ArticleCard; 
       <Animated.View style={{ flex: 1, transform: [{ translateX: dx }] }} {...pan.panHandlers}>
       <Pressable onPress={onTap ?? open} style={{ flex: 1 }} accessibilityRole="button" accessibilityLabel={a.headline}>
         <View>
-          <HeroImage a={a} height={imageH} />
+          <HeroImage a={a} height={imageH} instant />
           <View style={[styles.brand, { backgroundColor: 'rgba(11,31,58,0.88)' }]}>
             <View style={[styles.brandIcon, { borderColor: th.green }]}><T bold size={10} color={th.green}>M</T></View>
             <T bold size={12} color="#fff" style={{ letterSpacing: 1 }}>MAVY <T bold size={12} color={th.green}>NEWS</T></T>
