@@ -1,5 +1,21 @@
 # MAVY NEWS: How to run the server on your computer
 
+## ⭐ Already online (Hostinger VPS)
+
+| What | Address |
+|---|---|
+| **Download the app (APK)** | http://194.238.17.81:8475 (open on your phone) |
+| News server | http://194.238.17.81:8474/api/v1/health |
+| Newsroom admin login | admin@mavynews.in (password: in hPanel → VPS → Docker Manager → **mavy-news** → Environment → `ADMIN_PASSWORD`) |
+
+* These run in their own Docker projects, **mavy-news** (server + database) and **mavy-apk** (app builder + download page), separate from apbja and rentipa.
+* **To build a new APK after code changes:** hPanel → VPS → Docker Manager → **mavy-apk** → Restart. Wait about 20 minutes, then the download page shows the new version.
+* **To update the server after code changes:** restart **mavy-news**. It downloads the latest code from GitHub (branch `mavy-news-app` of `newsdesk-reporter`).
+* **Login OTP (until real SMS is set up):** open **mavy-news** → Logs and look for `DEV OTP`.
+
+---
+
+
 You only need to do the **one-time setup** once. After that, use **"Every day"**.
 
 ---
