@@ -1,0 +1,37 @@
+# MAVY NEWS server + database. Hostinger VPS project "mavy-news". Separate from apbja and rentipa.
+# Data: /var/lib/mavy-news/db. Code: fresh copy from GitHub on every restart.
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: mavy-news-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=mavy
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=mavy
+    volumes:
+      - /var/lib/mavy-news/db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mavy"]
+      interval: 5s
+      retries: 20
+  api:
+    image: node:22-alpine
+    container_name: mavy-news-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8474:4000"
+    environment:
+      - NODE_ENV=development
+      - PORT=4000
+      - DATABASE_URL=postgresql://mavy:${DB_PASSWORD}@db:5432/mavy
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - SMS_PROVIDER=console
+      - SEED_ADMIN_EMAIL=admin@mavynews.in
+      - SEED_ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - CORS_ORIGINS=http://194.238.17.81:8474
+    command: ["sh", "-c", "apk add --no-cache git >/dev/null && rm -rf /src && git clone -q --depth 1 -b mavy-news-app https://github.com/Mavytechsolutions/newsdesk-reporter /src && exec sh /src/deploy/api-run.sh"]

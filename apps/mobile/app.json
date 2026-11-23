@@ -1,0 +1,74 @@
+{
+  "expo": {
+    "name": "MAVY NEWS",
+    "slug": "mavy-news",
+    "scheme": "mavynews",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0B1F3A"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "in.mavynews.app",
+      "associatedDomains": [
+        "applinks:mavynews.in"
+      ],
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": [
+          "whatsapp"
+        ]
+      }
+    },
+    "android": {
+      "package": "in.mavynews.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#0B1F3A",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "mavynews.in",
+              "pathPrefix": "/n/"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ],
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "INTERNET"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-image",
+      "expo-font",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
+    ]
+  }
+}

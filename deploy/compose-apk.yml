@@ -1,0 +1,20 @@
+# Builds the MAVY NEWS Android APK and serves a download page on port 8475. Hostinger VPS project "mavy-apk".
+services:
+  apk-builder:
+    image: node:22-bookworm
+    container_name: mavy-apk-builder
+    restart: "no"
+    environment:
+      - API_URL=http://194.238.17.81:8474
+    volumes:
+      - /var/lib/mavy-news/apk:/out
+      - /var/lib/mavy-news/android-cache:/cache
+    command: ["bash", "-c", "rm -rf /src && git clone -q --depth 1 -b mavy-news-app https://github.com/Mavytechsolutions/newsdesk-reporter /src && exec bash /src/deploy/build-apk.sh"]
+  apk-web:
+    image: nginx:alpine
+    container_name: mavy-apk-web
+    restart: unless-stopped
+    ports:
+      - "8475:80"
+    volumes:
+      - /var/lib/mavy-news/apk:/usr/share/nginx/html:ro
