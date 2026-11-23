@@ -86,16 +86,19 @@ function givePost(m, key) {
 /* what one member may see */
 const PUBLIC = m => ({ ...m });
 const SLIM = m => ({ id:m.id, name:m.name, phone:m.phone, org:m.org, job:m.job, district:m.district, area:m.area, photo:m.photo, post:m.post, no:m.no, status:m.status, admin:m.admin, head:m.head, mid:m.mid, approvedAt:m.approvedAt, approvedBy:m.approvedBy, address:'', note:'' });
+const OFFICE = m => ({ ...SLIM(m), address: m.address });
+const isOffice = m => m.post !== 'Member' || !!m.head || m.admin;
 function view(v) {
   const vis = new Map();
-  const put = (m, full) => { if (m && (!vis.has(m.id) || full)) vis.set(m.id, full ? PUBLIC(m) : SLIM(m)); };
+  const put = (m, full) => { if (m && (!vis.has(m.id) || full)) vis.set(m.id, full ? PUBLIC(m) : isOffice(m) ? OFFICE(m) : SLIM(m)); };
   if (v.admin) S.members.forEach(m => put(m, true));
   else {
     const sc = scope(v);
     if (sc.length) S.members.filter(m => sc.includes(m.district)).forEach(m => put(m, true));
     leaders(v).forEach(m => put(m));
-    approved().filter(m => m.district === v.district && m.post !== 'Member').forEach(m => put(m));
   }
+  // everyone sees every district's President, office-bearers and Heads
+  approved().filter(isOffice).forEach(m => put(m));
   const msgs = S.msgs.filter(x => x.from === v.id || x.to.includes(v.id)).map(x => x.kind === 'notice' && x.from !== v.id ? { ...x, to: [v.id], read: x.read.includes(v.id) ? [v.id] : [] } : x);
   msgs.forEach(x => { put(Mb(x.from)); x.to.forEach(id => { if (x.kind === 'dm') put(Mb(id)); }); });
   const ab = Mb(v.approvedBy); if (ab) put(ab);
@@ -156,7 +159,8 @@ function act(sess, a) {
       Object.assign(m, { name: clean(a.name, 80), phone: p, org: clean(a.org, 80), district: a.district, area: clean(a.area, 80) });
       if (p && /mobile/i.test(m.note)) m.note = ''; return;
     }
-    case 'head': { need(v.admin); const m = tgt(); const ds = (a.districts || []).filter(d => DISTRICTS.includes(d)); if (!ds.length) throw new Error('Choose at least one district'); m.head = { title: clean(a.title, 60) || 'Head', districts: ds }; return; }
+    case 'head': { need(v.admin); const m = tgt(); const ds = (a.districts || []).filter(d => DISTRICTS.includes(d)); if (!ds.length) throw new Error('Choose at least one district'); m.head = { title: clean(a.title, 60) || 'Head', districts: ds };
+      if (a.unique) S.members.forEach(x => { if (x.id !== m.id && x.head && x.head.title === m.head.title) x.head = null; }); return; }
     case 'rmhead': { need(v.admin); tgt().head = null; return; }
     case 'send': {
       need(isLeader(v)); const pool = new Set(sendPool(v).map(m => m.id));
