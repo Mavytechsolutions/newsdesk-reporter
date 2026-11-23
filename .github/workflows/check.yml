@@ -14,7 +14,7 @@ jobs:
       - name: Check
         run: |
           mkdir out
-          { date -u; curl -sS -m 20 http://194.238.17.81:8473/ | grep -o 'Rayalaseema In-charge' | head -1; curl -sS -m 20 http://194.238.17.81:8473/api/health; echo; curl -sS -m 20 -o /dev/null -w 'page %{http_code} %{size_download} bytes\n' http://194.238.17.81:8473/; } > out/check.txt 2>&1 || true
+          { date -u; curl -sS -m 20 http://194.238.17.81:8473/ | grep -o 'Removal requests' | head -1; curl -sS -m 20 http://194.238.17.81:8473/api/health; echo; curl -sS -m 20 -o /dev/null -w 'page %{http_code} %{size_download} bytes\n' http://194.238.17.81:8473/; } > out/check.txt 2>&1 || true
           cat out/check.txt
           cd out && git init -q -b apbja-check && git config user.name check && git config user.email check@apbja.local
           git add -A && git commit -q -m check && git push -f -q "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" apbja-check

@@ -5,6 +5,7 @@ const PORT = +process.env.PORT || 8080;
 const DATA = process.env.DATA_DIR || '/data';
 const PUB = path.join(__dirname, '..', 'public');
 const DBF = path.join(DATA, 'db.json'), PHOTOS = path.join(DATA, 'photos'), BACK = path.join(DATA, 'backups');
+const { xlsx, pdf } = require('./export');
 const OTP = process.env.TEST_OTP || '1234';
 const ADMIN_PHONE = process.env.ADMIN_PHONE || '9959959524';
 for (const d of [DATA, PHOTOS, BACK]) fs.mkdirSync(d, { recursive: true });
@@ -55,6 +56,7 @@ const isLeader = v => v.admin || !!v.head || isPres(v);
 const scope = v => v.admin ? DISTRICTS : [...new Set([...(v.head ? v.head.districts : []), ...(isPres(v) ? [v.district] : [])])];
 const rank = m => m.post === 'President' ? 0 : m.post === 'Member' ? 99 : 1 + SLOTS.findIndex(s => s.p === m.post && s.no === m.no);
 const canManage = (v, m) => v.admin || (isPres(v) && v.district === m.district && m.id !== v.id && !m.admin);
+const canApproveRemoval = (v, m) => v.admin || (!!v.head && v.head.districts.includes(m.district) && !(m.delReq && m.delReq.by === v.id));
 const canApprove = (v, m) => v.admin || (isPres(v) && v.district === m.district);
 function leaders(v) {
   if (v.admin) return [];
@@ -162,6 +164,22 @@ function act(sess, a) {
     case 'head': { need(v.admin); const m = tgt(); const ds = (a.districts || []).filter(d => DISTRICTS.includes(d)); if (!ds.length) throw new Error('Choose at least one district'); m.head = { title: clean(a.title, 60) || 'Head', districts: ds };
       if (a.unique) S.members.forEach(x => { if (x.id !== m.id && x.head && x.head.title === m.head.title) x.head = null; }); return; }
     case 'rmhead': { need(v.admin); tgt().head = null; return; }
+    case 'memberphoto': { const m = tgt(); need(canManage(v, m)); savePhoto(m, a.photo); return; }
+    case 'delreq': { // President asks; an In-charge of that district (or admin) must approve
+      const m = tgt(); need(isPres(v) && v.district === m.district && m.id !== v.id && m.status === 'approved');
+      m.delReq = { by: v.id, at: Date.now(), reason: clean(a.reason, 200) }; return;
+    }
+    case 'delcancel': { const m = tgt(); need(m.delReq && (m.delReq.by === v.id || v.admin)); m.delReq = null; return; }
+    case 'delok': case 'remove': {
+      const m = tgt(); need(!m.admin && m.id !== v.id);
+      if (a.type === 'remove') need(v.admin); else need(m.delReq && canApproveRemoval(v, m));
+      const by = m.delReq ? m.delReq.by : v.id;
+      m.status = 'removed'; m.removed = { by, approvedBy: v.id, at: Date.now(), reason: m.delReq ? m.delReq.reason : clean(a.reason, 200) };
+      m.delReq = null; m.post = 'Member'; m.no = 0; m.head = null;
+      for (const [k, s2] of Object.entries(S.sessions)) if (s2.member === m.id) delete S.sessions[k];
+      return;
+    }
+    case 'delno': { const m = tgt(); need(m.delReq && canApproveRemoval(v, m)); m.delReq = null; return; }
     case 'send': {
       need(isLeader(v)); const pool = new Set(sendPool(v).map(m => m.id));
       const to = [...new Set(a.to || [])].filter(id => pool.has(id)); if (!to.length) throw new Error('Choose who should get it');
@@ -179,7 +197,7 @@ function act(sess, a) {
 
 /* ---------- http ---------- */
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.json': 'application/json', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.webmanifest': 'application/manifest+json' };
-const tries = new Map();
+const tries = new Map(), exportsQ = new Map();
 function send(res, code, obj) { res.writeHead(code, { 'content-type': 'application/json', 'cache-control': 'no-store' }); res.end(JSON.stringify(obj)); }
 function body(req) { return new Promise((ok, bad) => { let n = 0; const ch = []; req.on('data', c => { n += c.length; if (n > 1.5e6) { bad(new Error('Too large')); req.destroy(); } else ch.push(c); }); req.on('end', () => { try { ok(JSON.parse(Buffer.concat(ch).toString() || '{}')); } catch { bad(new Error('Bad request')); } }); }); }
 function session(req) { const t = (req.headers.authorization || '').replace(/^Bearer /, ''); return t && S.sessions[t] ? S.sessions[t] : null; }
@@ -206,6 +224,30 @@ http.createServer(async (req, res) => {
       const a = await body(req);
       try { act(s, a); } catch (e) { return send(res, 400, { error: e.message }); }
       save(); const m = Mb(s.member); return send(res, 200, { state: m ? view(m) : null });
+    }
+    if (url.pathname === '/api/export' && req.method === 'POST') {
+      const s = session(req); const v = s && Mb(s.member); if (!v || v.status !== 'approved' || !isLeader(v)) return send(res, 403, { error: 'Not allowed' });
+      const a = await body(req), fmt = a.fmt === 'pdf' ? 'pdf' : 'xlsx', sc = scope(v);
+      const ds = a.district ? [a.district].filter(d => sc.includes(d)) : sc; if (!ds.length) return send(res, 403, { error: 'Not allowed' });
+      const tok = crypto.randomBytes(16).toString('hex'); exportsQ.set(tok, { by: v.id, ds, fmt, at: Date.now() });
+      const name = (ds.length === 1 ? ds[0] : 'APBJA') + '-members.' + fmt;
+      return send(res, 200, { url: '/download/list/' + tok + '/' + encodeURIComponent(name.replace(/\s+/g, '-')) });
+    }
+    if (url.pathname.startsWith('/download/list/')) {
+      const tok = url.pathname.split('/')[3], q = exportsQ.get(tok);
+      if (!q || Date.now() - q.at > 15 * 60000) { res.writeHead(410, { 'content-type': 'text/plain' }); return res.end('This download link has expired. Go back to the app and tap Download again.'); }
+      const v = Mb(q.by); if (!v) { res.writeHead(403); return res.end(); }
+      const list = approved().filter(m => q.ds.includes(m.district) && !m.admin).sort((a, b) => a.district.localeCompare(b.district) || rank(a) - rank(b) || a.name.localeCompare(b.name));
+      const post = m => m.post === 'Member' ? 'Member' : m.post + (m.no ? ' ' + m.no : '');
+      const head = ['S.No', 'Member ID', 'Name', 'Designation', 'Channel', 'Mobile', 'District', 'Area', 'Address'];
+      const rows = list.map((m, i) => [i + 1, m.mid ? 'APBJA-' + m.mid : '', m.name, post(m) + (m.head ? ' / ' + m.head.title : ''), m.org, m.phone, m.district, m.area, m.address]);
+      const title = 'APBJA members - ' + (q.ds.length === 1 ? q.ds[0] : q.ds.length === DISTRICTS.length ? 'all districts' : q.ds.length + ' districts');
+      const sub = list.length + ' members - downloaded by ' + v.name + ' on ' + new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' });
+      const fname = decodeURIComponent(url.pathname.split('/')[4] || 'members.' + q.fmt).replace(/[^\w.-]/g, '');
+      const buf = q.fmt === 'pdf' ? pdf(title, sub, head, rows.map(r => r.map(String)), [28, 66, 124, 112, 88, 66, 74, 74, 150])
+        : xlsx(title, head, rows, [6, 13, 28, 26, 20, 13, 16, 18, 45]);
+      res.writeHead(200, { 'content-type': q.fmt === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'content-disposition': `attachment; filename="${fname}"`, 'cache-control': 'no-store' });
+      return res.end(buf);
     }
     if (url.pathname === '/api/logout' && req.method === 'POST') { const t = (req.headers.authorization || '').replace(/^Bearer /, ''); delete S.sessions[t]; save(); return send(res, 200, { ok: true }); }
     if (url.pathname.startsWith('/p/')) {
