@@ -357,7 +357,7 @@ class JournalistAppController {
     return this.svc.uploadPhoto(u, file, ip);
   }
 
-  @Post('posts') @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('posts') @Throttle({ default: { limit: 20, ttl: 60_000 } })
   create(@Body() dto: PostDto, @CurrentUser() u: AuthUser, @ClientIp() ip: string) { return this.svc.createPost(u, dto, ip); }
   @Get('posts') list(@Query() q: ListDto, @CurrentUser() u: AuthUser) { return this.svc.myPosts(u.id, q.limit ?? 30); }
   @Patch('posts/:id')

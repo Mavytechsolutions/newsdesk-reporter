@@ -150,6 +150,16 @@
         transition(a.id, 'archive', why).then(done('✔ తీసివేయబడింది (Taken down)'), fail);
       } }));
     }
+    var live = a.status === 'PUBLISHED' || a.status === 'SCHEDULED';
+    if (state.me.role !== 'DISTRICT_EDITOR' || !live)
+      actions.appendChild(h('button', { class: 'btn red small', type: 'button', text: '🗑 శాశ్వతంగా తొలగించు (Delete)', onclick: function () {
+        var t2 = (a.translations[0] || {}).headline || '';
+        if (!confirm('ఈ వార్తను శాశ్వతంగా తొలగించాలా? తిరిగి తీసుకురాలేము.\n(Delete this story for good? This cannot be undone.)\n\n' + t2)) return;
+        var why = live ? ask('ఎందుకు తొలగిస్తున్నారు? (Reason)') : '';
+        if (live && !why) return;
+        call('DELETE', '/newsroom/articles/' + a.id + (why ? '?reason=' + encodeURIComponent(why) : ''))
+          .then(done('✔ తొలగించబడింది (Deleted)'), fail);
+      } }));
     var places = (a.locations || []).map(function (l) { return l.location.nameTe; }).join(', ');
     return h('div', { class: 'story' },
       h('div', { class: 'meta' }, h('span', { class: 'badge ' + a.status, text: STATUS[a.status] || a.status }),

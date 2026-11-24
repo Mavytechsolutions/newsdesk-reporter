@@ -296,7 +296,7 @@ export function AdminReviewScreen() {
   const [statuses, setStatuses] = useState('SUBMITTED,IN_REVIEW');
   const [source, setSource] = useState<'journalist' | 'staff' | ''>('journalist');
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [noteFor, setNoteFor] = useState<{ a: AdminArticle; action: 'request_changes' | 'reject' | 'archive' } | null>(null);
+  const [noteFor, setNoteFor] = useState<{ a: AdminArticle; action: 'request_changes' | 'reject' | 'archive' | 'delete' } | null>(null);
   const q = useQuery({
     queryKey: ['admin', 'review', statuses, source],
     queryFn: () => api<{ items: AdminArticle[]; total: number }>(`/newsroom/articles?limit=50&statuses=${statuses}${source ? `&source=${source}` : ''}`),
@@ -317,6 +317,7 @@ export function AdminReviewScreen() {
     if (!noteFor) return;
     const { a, action } = noteFor;
     setNoteFor(null);
+    if (action === 'delete') return remove(a, note);
     setBusyId(a.id);
     try {
       if (action === 'reject' && a.status === 'SUBMITTED') await move(a.id, 'start_review');
@@ -325,8 +326,24 @@ export function AdminReviewScreen() {
     } catch (e) { tell(errText(e)); } finally { setBusyId(null); }
   };
 
+  const ALL = 'DRAFT,SUBMITTED,IN_REVIEW,CHANGES_REQUESTED,APPROVED,SCHEDULED,PUBLISHED,REJECTED,ARCHIVED';
+  const remove = async (a: AdminArticle, reason?: string) => {
+    setBusyId(a.id);
+    try {
+      await api(`/newsroom/articles/${a.id}${reason ? `?reason=${encodeURIComponent(reason)}` : ''}`, { method: 'DELETE' });
+      tell(L('✔ తొలగించబడింది', '✔ Deleted'));
+      refresh();
+    } catch (e) { tell(errText(e)); } finally { setBusyId(null); }
+  };
+  const askDelete = async (a: AdminArticle) => {
+    const live = a.status === 'PUBLISHED' || a.status === 'SCHEDULED';
+    const t0 = a.translations[0]?.headline ?? '';
+    if (!(await ask(L(`ఈ వార్తను శాశ్వతంగా తొలగించాలా? తిరిగి తీసుకురాలేము.\n\n${t0}`, `Delete this story for good? This cannot be undone.\n\n${t0}`), L('తొలగించు', 'Delete'), L('రద్దు', 'Cancel')))) return;
+    if (live) setNoteFor({ a, action: 'delete' });
+    else remove(a);
+  };
   const filters: [string, string, string][] = [
-    ['SUBMITTED,IN_REVIEW', 'సమీక్షకు', 'Waiting'], ['CHANGES_REQUESTED', 'తిరిగి పంపినవి', 'Sent back'], ['PUBLISHED', 'ప్రచురితం', 'Published'],
+    ['SUBMITTED,IN_REVIEW', 'సమీక్షకు', 'Waiting'], [ALL, 'అన్నీ', 'All'], ['DRAFT', 'డ్రాఫ్ట్‌లు', 'Drafts'], ['CHANGES_REQUESTED', 'తిరిగి పంపినవి', 'Sent back'], ['PUBLISHED', 'ప్రచురితం', 'Published'],
     ['REJECTED', 'తిరస్కరణ', 'Rejected'], ['ARCHIVED', 'తీసివేసినవి', 'Taken down'],
   ];
   return (
@@ -384,7 +401,10 @@ export function AdminReviewScreen() {
                       </>
                     ) : null}
                     {a.status === 'PUBLISHED' && role !== 'DISTRICT_EDITOR' ? (
-                      <Button kind="danger" title={L('తీసివేయి (పాయింట్లు వెనక్కి)', 'Take down (points taken back)')} icon="trash-outline" onPress={() => setNoteFor({ a, action: 'archive' })} />
+                      <Button kind="outline" title={L('తీసివేయి (పాయింట్లు వెనక్కి)', 'Take down (points taken back)')} icon="eye-off-outline" onPress={() => setNoteFor({ a, action: 'archive' })} />
+                    ) : null}
+                    {role !== 'DISTRICT_EDITOR' || !['PUBLISHED', 'SCHEDULED'].includes(a.status) ? (
+                      <Button kind="danger" title={L('శాశ్వతంగా తొలగించు', 'Delete for good')} icon="trash-outline" style={{ marginTop: 8 }} onPress={() => askDelete(a)} />
                     ) : null}
                   </View>
                 )}
@@ -395,7 +415,8 @@ export function AdminReviewScreen() {
       )}
       <NoteBox visible={!!noteFor} onCancel={() => setNoteFor(null)} onSend={withNote}
         title={noteFor?.action === 'request_changes' ? L('ఏమి మార్చాలి? (జర్నలిస్ట్‌కు యాప్‌లో కనిపిస్తుంది)', 'What should they fix? (shown in their app)')
-          : noteFor?.action === 'reject' ? L('ఎందుకు తిరస్కరిస్తున్నారు?', 'Why are you rejecting it?') : L('ఎందుకు తీసివేస్తున్నారు?', 'Why are you taking it down?')} />
+          : noteFor?.action === 'reject' ? L('ఎందుకు తిరస్కరిస్తున్నారు?', 'Why are you rejecting it?')
+          : noteFor?.action === 'delete' ? L('ఎందుకు తొలగిస్తున్నారు?', 'Why are you deleting it?') : L('ఎందుకు తీసివేస్తున్నారు?', 'Why are you taking it down?')} />
     </View>
   );
 }

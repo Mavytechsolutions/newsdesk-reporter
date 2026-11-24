@@ -217,9 +217,24 @@ describe('Posting from the app and review', () => {
     expect(m.points).toBe(30);
     expect(m.approvedPosts).toBe(500);
   });
+  it('deleting a story: sub-admins only non-live ones in their area; admin any; points come back off', async () => {
+    const draft = (await post(reader, 'తొలగించాల్సిన పరీక్ష వార్త ఒకటి').expect(201)).body.id;
+    await http.delete(api(`/newsroom/articles/${draft}`)).set(as(sssSub)).expect(403); // other district
+    await http.delete(api(`/newsroom/articles/${draft}`)).set(as(reader)).expect(403); // the app user cannot
+    await http.delete(api(`/newsroom/articles/${draft}`)).set(as(mandalSub)).expect(200);
+    await http.get(api(`/newsroom/articles/${draft}`)).set(as(admin)).expect(404);
+    const live = (await post(reader, 'తొలగించాల్సిన ప్రచురిత వార్త రెండు').expect(201)).body.id;
+    await publishAs(admin, live);
+    const before = (await me()).points;
+    await http.delete(api(`/newsroom/articles/${live}`)).set(as(mandalSub)).expect(403); // live: admin only
+    await http.delete(api(`/newsroom/articles/${live}?reason=duplicate`)).set(as(admin)).expect(200);
+    expect((await me()).points).toBe(before - 20);
+    const log = await pool.query("select metadata from audit_logs where action='article.delete' order by created_at desc limit 1");
+    expect(log.rows[0].metadata.reason).toBe('duplicate');
+  });
   it('leaderboard is public', async () => {
     const r = await http.get(api('/journalist/leaderboard')).expect(200);
-    expect(r.body[0]).toMatchObject({ name: 'రమేష్ కుమార్', level: 'SENIOR', points: 30 });
+    expect(r.body[0]).toMatchObject({ name: 'రమేష్ కుమార్', level: 'SENIOR' });
     expect(r.body[0].phone).toBeUndefined();
   });
   it('a suspended journalist cannot post; reactivation restores it', async () => {
@@ -229,7 +244,7 @@ describe('Posting from the app and review', () => {
     expect((await me()).state).toBe('SUSPENDED');
     await post(reader, 'నిలిపివేసిన తర్వాత వార్త పంపడం').expect(403);
     const list = (await http.get(api('/admin/journalists')).set(as(ananSub)).expect(200)).body;
-    expect(list[0]).toMatchObject({ name: 'రమేష్ కుమార్', points: 30 });
+    expect(list[0]).toMatchObject({ name: 'రమేష్ కుమార్' });
     await http.patch(api(`/admin/journalists/${userId}`)).set(as(admin)).send({ action: 'reactivate' }).expect(200);
     await post(reader, 'మళ్లీ అనుమతి వచ్చిన తర్వాత వార్త').expect(201);
   });

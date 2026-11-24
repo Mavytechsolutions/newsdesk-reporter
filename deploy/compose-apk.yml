@@ -5,7 +5,7 @@ services:
     container_name: mavy-apk-builder
     restart: "no"
     environment:
-      - API_URL=http://194.238.17.81:8474
+      - API_URL=https://www.mavynews.com
     volumes:
       - /var/lib/mavy-news/apk:/out
       - /var/lib/mavy-news/android-cache:/cache

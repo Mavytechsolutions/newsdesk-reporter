@@ -249,10 +249,8 @@ export function ProfileScreen({ navigation }: any) {
         </>
       )}
       {!isAdmin ? (
-        <Pressable onPress={() => navigation.navigate('AdminLogin')} style={[styles.row, { justifyContent: 'center', marginTop: 16 }]} accessibilityRole="link">
-          <Ionicons name="shield-checkmark-outline" size={16} color={th.muted} />
-          <T size={13} color={th.muted} style={{ marginLeft: 6 }}>{language === 'te' ? 'అడ్మిన్ / సబ్-అడ్మిన్ లాగిన్' : 'Admin / sub-admin login'}</T>
-        </Pressable>
+        <Row icon="shield-checkmark-outline" label={language === 'te' ? 'అడ్మిన్ / సబ్-అడ్మిన్ లాగిన్' : 'Admin / sub-admin login'}
+          value={language === 'te' ? 'యూజర్‌నేమ్, పాస్‌వర్డ్‌తో' : 'With username and password'} onPress={() => navigation.navigate('AdminLogin')} />
       ) : null}
       {devTaps >= 7 ? <ServerSetting /> : null}
       <Pressable onPress={() => setDevTaps((n) => n + 1)} accessibilityRole="text">

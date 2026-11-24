@@ -283,6 +283,12 @@
               .catch(function (e) { msg('listMsg', e.message); });
           } }));
         }
+        if (['SUPER_ADMIN', 'MANAGING_EDITOR'].indexOf(state.me && state.me.role) >= 0 || ((a.status === 'DRAFT' || a.status === 'CHANGES_REQUESTED') && state.me && state.me.role !== 'DISTRICT_EDITOR') || (state.me && state.me.role === 'DISTRICT_EDITOR' && a.status !== 'PUBLISHED' && a.status !== 'SCHEDULED'))
+          actions.appendChild(h('button', { class: 'btn red small', type: 'button', text: '🗑 తొలగించు', onclick: function () {
+            if (!confirm('ఈ వార్తను శాశ్వతంగా తొలగించాలా? తిరిగి తీసుకురాలేము. (Delete for good?)\n\n' + (te.headline || ''))) return;
+            call('DELETE', '/newsroom/articles/' + a.id).then(function () { msg('listMsg', '✔ తొలగించబడింది (Deleted)', true); loadList(); })
+              .catch(function (e) { msg('listMsg', e.message); });
+          } }));
         box.appendChild(h('div', { class: 'item' }, thumb, h('div', { style: 'flex:1;min-width:0' },
           h('h3', { text: (a.isBreaking ? '🔴 ' : '') + (te.headline || '') }),
           h('div', { class: 'meta' }, h('span', { class: 'badge ' + a.status, text: STATUS[a.status] || a.status }),

@@ -197,6 +197,36 @@ export class ArticlesService implements OnModuleInit, OnModuleDestroy {
     return this.require(id);
   }
 
+  /**
+   * Delete a story for good. Super Admin / Managing Editor: any story. Sub-admins (district editors): stories in their
+   * area that are not live (they ask an admin to remove live ones). Reporters: only their own drafts.
+   * A journalist's points for the story are taken back. A copy of the text is kept in the audit log.
+   */
+  async remove(id: string, actor: AuthUser, ip: string, reason?: string) {
+    const a = await this.require(id);
+    const role = actor.role as Role;
+    const live = a.status === 'PUBLISHED' || a.status === 'SCHEDULED';
+    if (UNSCOPED_ROLES.includes(role)) {
+      // allowed
+    } else if (role === 'DISTRICT_EDITOR') {
+      if (live) throw new ForbiddenException('Live stories can be deleted only by the Super Admin. You can send it back or ask the admin.');
+      await this.assertInScope(actor, a.locations.map((l) => l.location.path));
+    } else if (a.authorId === actor.id && (a.status === 'DRAFT' || a.status === 'CHANGES_REQUESTED')) {
+      // reporters may delete their own unfinished drafts
+    } else {
+      throw new ForbiddenException('You cannot delete this story.');
+    }
+    await this.db.transaction(async (tx) => {
+      const revoked = await revokeForTakedown(tx as unknown as Db, id);
+      await this.audit.log({
+        actorId: actor.id, action: 'article.delete', entity: 'article', entityId: id, ip,
+        metadata: { reason, status: a.status, slug: a.slug, authorId: a.authorId, translations: a.translations, revokedPoints: revoked?.points },
+      }, tx as unknown as Db);
+      await tx.delete(articles).where(eq(articles.id, id));
+    });
+    return { ok: true };
+  }
+
   async newsroomList(q: NewsroomListQuery, actor: AuthUser) {
     const where: SQL[] = [];
     if (q.status) where.push(eq(articles.status, q.status as ArticleStatus));
