@@ -14,7 +14,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { ArticlesModule } from './articles/articles.module';
 import { FeedModule } from './articles/feed.module';
 import { CommunityModule } from './articles/community.module';
-import { WebPageModule } from './articles/web-page.module';
+import { SiteModule } from './site/site.module';
 import { MediaModule } from './media/media.module';
 import { Public } from './common/auth.decorators';
 
@@ -35,7 +35,7 @@ class HealthController {
 @Module({
   imports: [
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 300 }]),
-    DbModule, AuditModule, AuthModule, LocationsModule, CategoriesModule, UsersModule, StaffModule, JournalistsModule, ArticlesModule, FeedModule, CommunityModule, WebPageModule, MediaModule,
+    DbModule, AuditModule, AuthModule, LocationsModule, CategoriesModule, UsersModule, StaffModule, JournalistsModule, ArticlesModule, FeedModule, CommunityModule, SiteModule, MediaModule,
   ],
   controllers: [HealthController],
   providers: [

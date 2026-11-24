@@ -176,6 +176,36 @@ describe('Shared story web page', () => {
   });
 });
 
+describe('Website (www.mavynews.com)', () => {
+  it('home shows today\'s published news; section, place, search and info pages work', async () => {
+    const home = await http.get('/').expect(200);
+    expect(home.text).toContain('ఈ రోజు వార్తలు');
+    expect(home.text).toContain('/site/site.css');
+    expect(home.text).not.toMatch(/style="/); // strict CSP: no inline styles
+    expect(home.headers['content-security-policy']).toContain("script-src 'self'");
+    const en = await http.get('/?lang=en').expect(200);
+    expect(en.text).toContain("Today's news");
+    expect(en.headers['set-cookie'][0]).toMatch(/lang=en/);
+    await http.get('/c/politics').expect(200);
+    await http.get('/c/not-a-section').expect(404);
+    await http.get('/d/dist-anantapur').expect(200);
+    await http.get('/find?q=' + encodeURIComponent('వార్త')).expect(200);
+    for (const p of ['/about', '/grievance', '/privacy', '/robots.txt', '/sitemap.xml', '/news-sitemap.xml', '/site/site.css', '/site/anek-telugu.woff2'])
+      await http.get(p).expect(200);
+    await http.get('/site/../package.json').expect(404);
+    // the app's API keeps its own addresses
+    await http.get(api('/search?q=test')).expect(200);
+  });
+  it('story page has Google NewsArticle data and a WhatsApp share link', async () => {
+    const { slug } = (await pool.query("select slug from articles where status='PUBLISHED' limit 1")).rows[0];
+    const r = await http.get(`/n/${slug}`).expect(200);
+    expect(r.text).toContain('"@type":"NewsArticle"');
+    expect(r.text).toContain('https://wa.me/?text=');
+    const sm = await http.get('/sitemap.xml').expect(200);
+    expect(sm.text).toContain(`/n/${slug}`);
+  });
+});
+
 describe('Newsroom page and photo upload', () => {
   it('serves the newsroom page, its script and the Telugu font', async () => {
     const page = await http.get('/newsroom').expect(200);

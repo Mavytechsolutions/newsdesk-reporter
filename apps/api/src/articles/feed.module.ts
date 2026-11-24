@@ -233,5 +233,5 @@ class FeedController {
   @Delete('me/personalization') @HttpCode(200) reset(@CurrentUser() u: AuthUser) { return this.svc.resetPersonalisation(u); }
 }
 
-@Module({ imports: [ArticlesModule, CommunityModule], controllers: [FeedController], providers: [FeedService] })
+@Module({ imports: [ArticlesModule, CommunityModule], controllers: [FeedController], providers: [FeedService], exports: [FeedService] })
 export class FeedModule {}

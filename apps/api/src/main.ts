@@ -11,7 +11,19 @@ export function configureApp(app: INestApplication) {
   app.enableCors({ origin: config.corsOrigins.length ? config.corsOrigins : false, credentials: true });
   app.setGlobalPrefix('api/v1', {
     exclude: [
+      // public website (www.mavynews.com)
+      { path: '/', method: RequestMethod.GET },
       { path: 'n/:slug', method: RequestMethod.GET },
+      { path: 'c/:slug', method: RequestMethod.GET },
+      { path: 'd/:slug', method: RequestMethod.GET },
+      { path: 'find', method: RequestMethod.GET },
+      { path: 'about', method: RequestMethod.GET },
+      { path: 'grievance', method: RequestMethod.GET },
+      { path: 'privacy', method: RequestMethod.GET },
+      { path: 'site/:file', method: RequestMethod.GET },
+      { path: 'robots.txt', method: RequestMethod.GET },
+      { path: 'sitemap.xml', method: RequestMethod.GET },
+      { path: 'news-sitemap.xml', method: RequestMethod.GET },
       { path: 'media/:file', method: RequestMethod.GET },
       { path: 'newsroom', method: RequestMethod.GET },
       { path: 'newsroom/app.js', method: RequestMethod.GET },

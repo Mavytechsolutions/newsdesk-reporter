@@ -27,6 +27,13 @@ export const config = {
   otpMaxPerHour: num('OTP_MAX_PER_HOUR', 5),
   otpMaxAttempts: num('OTP_MAX_ATTEMPTS', 5),
   /** TESTING ONLY: every phone number logs in with this code (e.g. 1234) and no SMS is sent. Refused in production. */
+  /** Grievance Officer shown on the website (IT Rules 2021). Set in the server settings. */
+  grievance: {
+    name: process.env.GRIEVANCE_NAME ?? '',
+    email: process.env.GRIEVANCE_EMAIL ?? '',
+    phone: process.env.GRIEVANCE_PHONE ?? '',
+    address: process.env.GRIEVANCE_ADDRESS ?? '',
+  },
   otpFixedCode: process.env.OTP_FIXED_CODE ?? '',
   corsOrigins: (process.env.CORS_ORIGINS ?? '').split(',').map((s) => s.trim()).filter(Boolean),
   enableScheduler: process.env.DISABLE_SCHEDULER !== '1',
