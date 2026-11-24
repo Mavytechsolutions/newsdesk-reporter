@@ -8,7 +8,7 @@
 | **Newsroom (add stories)** | http://194.238.17.81:8474/newsroom |
 | **Admin (review stories, approve journalists, sub-admins)** | In the app: **Profile → అడ్మిన్ / సబ్-అడ్మిన్ లాగిన్** (email + password). On a computer: http://194.238.17.81:8474/admin |
 | News server | http://194.238.17.81:8474/api/v1/health |
-| Newsroom admin login | admin@mavynews.in (password: in hPanel → VPS → Docker Manager → **mavy-news** → Environment → `ADMIN_PASSWORD`) |
+| Master admin login | username **admin** (or admin@mavynews.in). Change the password: login screen → **పాస్‌వర్డ్ మర్చిపోయారా? / మార్చండి (OTP)** → OTP goes to **8886688864**. Until a real SMS service is connected, the OTP appears in hPanel → VPS → Docker Manager → **mavy-news** → Logs (line `DEV OTP for +918886688864`). |
 
 * These run in their own Docker projects, **mavy-news** (server + database) and **mavy-apk** (app builder + download page), separate from apbja and rentipa.
 * **To build a new APK after code changes:** hPanel → VPS → Docker Manager → **mavy-apk** → Restart. Wait about 20 minutes, then the download page shows the new version.

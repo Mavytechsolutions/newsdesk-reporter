@@ -22,7 +22,7 @@ import { CommentsScreen } from './src/screens/CommentsScreen';
 import { ShareCardHost } from './src/share/ShareCard';
 import { BookmarksScreen, HistoryScreen, LoginScreen, ProfileScreen, TopicsScreen, VideosScreen } from './src/screens/OtherScreens';
 import { BecomeJournalistScreen, JournalistDeskScreen, WriteStoryScreen } from './src/screens/JournalistScreens';
-import { AdminHomeScreen, AdminJournalistsScreen, AdminLoginScreen, AdminRequestsScreen, AdminReviewScreen, AdminSubAdminsScreen } from './src/screens/AdminScreens';
+import { AdminHomeScreen, AdminJournalistsScreen, AdminLoginScreen, AdminPasswordScreen, AdminRequestsScreen, AdminReviewScreen, AdminSubAdminsScreen } from './src/screens/AdminScreens';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 60_000, retry: 1, gcTime: 30 * 60_000 } },
@@ -106,6 +106,7 @@ function Root() {
           <Stack.Screen name="JournalistDesk" component={JournalistDeskScreen} options={{ title: language === 'te' ? 'నా జర్నలిస్ట్ డెస్క్' : 'My journalist desk' }} />
           <Stack.Screen name="WriteStory" component={WriteStoryScreen} options={{ title: language === 'te' ? 'వార్త రాయండి' : 'Write a story' }} />
           <Stack.Screen name="AdminLogin" component={AdminLoginScreen} options={{ title: '', presentation: 'modal' }} />
+          <Stack.Screen name="AdminPassword" component={AdminPasswordScreen} options={{ title: '' }} />
           <Stack.Screen name="Admin" component={AdminHomeScreen} options={{ title: language === 'te' ? 'అడ్మిన్ ప్యానెల్' : 'Admin panel' }} />
           <Stack.Screen name="AdminReview" component={AdminReviewScreen} options={{ title: language === 'te' ? 'వార్తల సమీక్ష' : 'Review stories' }} />
           <Stack.Screen name="AdminRequests" component={AdminRequestsScreen} options={{ title: language === 'te' ? 'జర్నలిస్ట్ దరఖాస్తులు' : 'Journalist requests' }} />

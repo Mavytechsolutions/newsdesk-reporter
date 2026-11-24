@@ -38,6 +38,10 @@ export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   phone: text('phone').unique(),
   email: text('email').unique(),
+  /** short login name for staff, e.g. "admin" (email also works) */
+  username: text('username').unique(),
+  /** staff: mobile number that receives the OTP to change / reset the password */
+  recoveryPhone: text('recovery_phone'),
   passwordHash: text('password_hash'),
   googleId: text('google_id').unique(),
   appleId: text('apple_id').unique(),
@@ -105,6 +109,8 @@ export const otpRequests = pgTable('otp_requests', {
   phone: text('phone').notNull(),
   codeHash: text('code_hash').notNull(),
   attempts: integer('attempts').notNull().default(0),
+  /** 'login' (phone login) or 'pwd_reset' (staff password change). Kept apart so one can never be used for the other. */
+  purpose: text('purpose').notNull().default('login'),
   consumed: boolean('consumed').notNull().default(false),
   expiresAt: ts('expires_at').notNull(),
   ip: text('ip'),

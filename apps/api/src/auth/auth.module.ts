@@ -1,14 +1,21 @@
 import { Body, Controller, Global, HttpCode, Module, NotImplementedException, Post } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { Throttle } from '@nestjs/throttler';
-import { IsEmail, IsString, Length, MinLength } from 'class-validator';
+import { IsString, Length, MaxLength, MinLength } from 'class-validator';
 import { AuthService } from './auth.service';
 import { createSmsProvider, SMS_PROVIDER } from './sms/sms.provider';
 import { ClientIp, Public } from '../common/auth.decorators';
 
 class OtpRequestDto { @IsString() @Length(10, 16) phone: string; }
 class OtpVerifyDto { @IsString() @Length(10, 16) phone: string; @IsString() @Length(4, 6) code: string; }
-class StaffLoginDto { @IsEmail() email: string; @IsString() @MinLength(8) password: string; }
+/** `email` = email or username (e.g. "admin") */
+class StaffLoginDto { @IsString() @MinLength(3) @MaxLength(120) email: string; @IsString() @MinLength(8) @MaxLength(200) password: string; }
+class PasswordOtpDto { @IsString() @MinLength(3) @MaxLength(120) login: string; }
+class PasswordResetDto {
+  @IsString() @MinLength(3) @MaxLength(120) login: string;
+  @IsString() @Length(6, 6) code: string;
+  @IsString() @MinLength(10) @MaxLength(200) newPassword: string;
+}
 class RefreshDto { @IsString() @MinLength(20) refreshToken: string; }
 class SocialDto { @IsString() idToken: string; }
 
@@ -38,6 +45,19 @@ class AuthController {
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   staffLogin(@Body() dto: StaffLoginDto, @ClientIp() ip: string) {
     return this.auth.staffLogin(dto.email, dto.password, ip);
+  }
+
+  /** Change / forgotten password: an OTP goes to the account's recovery mobile. */
+  @Post('staff/password/otp') @HttpCode(200)
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
+  passwordOtp(@Body() dto: PasswordOtpDto, @ClientIp() ip: string) {
+    return this.auth.passwordOtp(dto.login, ip);
+  }
+
+  @Post('staff/password/reset') @HttpCode(200)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } }) // each OTP also dies after a few wrong tries
+  passwordReset(@Body() dto: PasswordResetDto, @ClientIp() ip: string) {
+    return this.auth.passwordReset(dto.login, dto.code, dto.newPassword, ip);
   }
 
   @Post('refresh') @HttpCode(200)

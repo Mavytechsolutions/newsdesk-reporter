@@ -66,8 +66,8 @@ export class StaffService {
     const id = await this.db.transaction(async (tx) => {
       const [u] = byPhone
         // the person already uses the app as a reader: upgrade that same account
-        ? await tx.update(users).set({ email, passwordHash, name: dto.name, role: dto.role, status: 'ACTIVE', updatedAt: new Date() }).where(eq(users.id, byPhone.id)).returning({ id: users.id })
-        : await tx.insert(users).values({ email, phone, passwordHash, name: dto.name, role: dto.role, language: 'te' }).returning({ id: users.id });
+        ? await tx.update(users).set({ email, passwordHash, name: dto.name, role: dto.role, status: 'ACTIVE', recoveryPhone: phone, updatedAt: new Date() }).where(eq(users.id, byPhone.id)).returning({ id: users.id })
+        : await tx.insert(users).values({ email, phone, recoveryPhone: phone, passwordHash, name: dto.name, role: dto.role, language: 'te' }).returning({ id: users.id });
       await tx.insert(staffProfiles).values({ userId: u.id, designation: dto.designation, verified: true });
       if (dto.locationIds?.length) await tx.insert(staffAssignments).values(dto.locationIds.map((locationId) => ({ staffId: u.id, locationId })));
       await this.audit.log({ actorId: actor.id, action: 'staff.create', entity: 'user', entityId: u.id, metadata: { role: dto.role, locationIds: dto.locationIds }, ip }, tx as unknown as Db);

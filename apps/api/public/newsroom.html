@@ -68,13 +68,14 @@ details summary{cursor:pointer;font-weight:700;margin-top:14px}
   <section id="loginView" class="card hidden">
     <h2 style="margin-top:0">న్యూస్‌రూమ్ లాగిన్ (Newsroom login)</h2>
     <form id="loginForm">
-      <label>ఈమెయిల్ (Email)</label>
-      <input type="email" id="email" autocomplete="username" required>
+      <label>యూజర్‌నేమ్ / ఈమెయిల్ (Username / email)</label>
+      <input type="text" id="email" autocomplete="username" autocapitalize="none" required>
       <label>పాస్‌వర్డ్ (Password)</label>
       <input type="password" id="password" autocomplete="current-password" required>
       <div id="loginMsg"></div>
       <button class="btn" style="width:100%;margin-top:16px" type="submit">లాగిన్</button>
     </form>
+    <button type="button" class="btn out" id="forgotPw" style="width:100%;margin-top:10px">🔑 పాస్‌వర్డ్ మర్చిపోయారా? / మార్చండి (OTP)</button>
   </section>
 
   <!-- APP -->

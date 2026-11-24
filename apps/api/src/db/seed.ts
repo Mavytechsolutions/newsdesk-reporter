@@ -167,6 +167,15 @@ export async function seed(db = drizzle(new Pool({ connectionString: config.data
     await db.insert(s.staffProfiles).values({ userId: admin.id, designation: 'Super Admin', verified: true });
     console.log(`✔ Super Admin created: ${email}`);
   } else console.log(`✔ Super Admin already exists: ${email}`);
+  // short login name ("admin") and the mobile that gets the OTP for password changes
+  const username = (process.env.SEED_ADMIN_USERNAME ?? 'admin').toLowerCase();
+  if (!admin.username && username) {
+    const [taken] = await db.select({ id: s.users.id }).from(s.users).where(eq(s.users.username, username));
+    if (!taken) await db.update(s.users).set({ username }).where(eq(s.users.id, admin.id));
+  }
+  const recovery = process.env.ADMIN_RECOVERY_PHONE?.replace(/\D/g, '').slice(-10);
+  if (!admin.recoveryPhone && recovery && /^[6-9]\d{9}$/.test(recovery))
+    await db.update(s.users).set({ recoveryPhone: `+91${recovery}` }).where(eq(s.users.id, admin.id));
 
   if (opts.samples) {
     const [existing] = await db.select({ id: s.articles.id }).from(s.articles).limit(1);

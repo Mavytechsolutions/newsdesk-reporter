@@ -113,9 +113,9 @@ export function AdminLoginScreen({ navigation }: any) {
       <Ionicons name="shield-checkmark-outline" size={48} color={th.green} />
       <T bold size={22} style={{ marginTop: 12 }}>{L('అడ్మిన్ లాగిన్', 'Admin login')}</T>
       <T color={th.muted} style={{ marginTop: 4, marginBottom: 20 }}>{L('అడ్మిన్, సబ్-అడ్మిన్ల కోసం. మీకు ఇచ్చిన ఈమెయిల్, పాస్‌వర్డ్ నమోదు చేయండి.', 'For admins and sub-admins. Enter the email and password you were given.')}</T>
-      <T bold size={14}>{L('ఈమెయిల్', 'Email')}</T>
-      <TextInput value={email} onChangeText={setEmail} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" autoComplete="email"
-        style={input} accessibilityLabel="Email" placeholder="name@mavynews.in" placeholderTextColor={th.muted} />
+      <T bold size={14}>{L('యూజర్‌నేమ్ / ఈమెయిల్', 'Username / email')}</T>
+      <TextInput value={email} onChangeText={setEmail} autoCapitalize="none" autoCorrect={false} autoComplete="username"
+        style={input} accessibilityLabel="Username" placeholder="admin" placeholderTextColor={th.muted} />
       <T bold size={14} style={{ marginTop: 14 }}>{L('పాస్‌వర్డ్', 'Password')}</T>
       <View style={styles.row}>
         <TextInput value={password} onChangeText={setPassword} secureTextEntry={!show} autoCapitalize="none" autoCorrect={false} autoComplete="password"
@@ -124,7 +124,78 @@ export function AdminLoginScreen({ navigation }: any) {
           <Ionicons name={show ? 'eye-off-outline' : 'eye-outline'} size={24} color={th.muted} />
         </Pressable>
       </View>
-      <Button title={L('లాగిన్', 'Log in')} icon="log-in-outline" onPress={login} loading={busy} disabled={!email.includes('@') || password.length < 6} style={{ marginTop: 18 }} />
+      <Button title={L('లాగిన్', 'Log in')} icon="log-in-outline" onPress={login} loading={busy} disabled={email.trim().length < 3 || password.length < 6} style={{ marginTop: 18 }} />
+      {error ? <T color={th.red} style={{ marginTop: 14 }}>{error}</T> : null}
+      <Pressable onPress={() => navigation.navigate('AdminPassword', { login: email.trim() })} style={{ marginTop: 22, alignItems: 'center' }} accessibilityRole="link">
+        <T color={th.green} bold>{L('పాస్‌వర్డ్ మర్చిపోయారా? / మార్చండి (OTP)', 'Forgot / change password (OTP)')}</T>
+      </Pressable>
+    </ScrollView>
+  );
+}
+
+// ================= Change / forgotten password (OTP to the recovery mobile) =================
+export function AdminPasswordScreen({ navigation, route }: any) {
+  const th = useTheme();
+  const L = useL();
+  const font = useFont();
+  const qc = useQueryClient();
+  const [login, setLogin] = useState<string>(route?.params?.login || '');
+  const [sentTo, setSentTo] = useState<string | null>(null);
+  const [code, setCode] = useState('');
+  const [pw, setPw] = useState('');
+  const [pw2, setPw2] = useState('');
+  const [show, setShow] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const input = [styles.input, { color: th.text, borderColor: th.border, backgroundColor: th.card, fontFamily: font() }];
+
+  const sendOtp = async () => {
+    setError('');
+    setBusy(true);
+    try {
+      const r = await api<{ to: string }>('/auth/staff/password/otp', { method: 'POST', body: { login: login.trim() } });
+      setSentTo(r.to);
+    } catch (e) { setError(errText(e)); } finally { setBusy(false); }
+  };
+  const save = async () => {
+    setError('');
+    if (!PASSWORD_RULE.test(pw)) return setError(L('పాస్‌వర్డ్ కనీసం 10 అక్షరాలు, అక్షరాలు + అంకెలు ఉండాలి', 'Password: at least 10 characters with letters and numbers'));
+    if (pw !== pw2) return setError(L('రెండు పాస్‌వర్డ్‌లు ఒకేలా లేవు', 'The two passwords do not match'));
+    setBusy(true);
+    try {
+      await api('/auth/staff/password/reset', { method: 'POST', body: { login: login.trim(), code: code.trim(), newPassword: pw } });
+      // every session of this account was logged out: start fresh
+      if (useAuth.getState().loggedIn) { await logout(); qc.clear(); }
+      tell(L('✔ పాస్‌వర్డ్ మార్చబడింది. కొత్త పాస్‌వర్డ్‌తో లాగిన్ అవ్వండి.', '✔ Password changed. Log in with the new password.'));
+      navigation.navigate('AdminLogin');
+    } catch (e) { setError(errText(e)); } finally { setBusy(false); }
+  };
+
+  return (
+    <ScrollView style={{ flex: 1, backgroundColor: th.bg }} contentContainerStyle={{ padding: 24 }} keyboardShouldPersistTaps="handled">
+      <Ionicons name="key-outline" size={44} color={th.green} />
+      <T bold size={21} style={{ marginTop: 10 }}>{L('పాస్‌వర్డ్ మార్చండి', 'Change password')}</T>
+      <T color={th.muted} style={{ marginTop: 4, marginBottom: 18, lineHeight: 22 }}>{L('మీ రిజిస్టర్డ్ మొబైల్‌కు OTP వస్తుంది. ఆ OTP తో కొత్త పాస్‌వర్డ్ పెట్టండి.', 'An OTP is sent to your registered mobile. Use it to set a new password.')}</T>
+      <T bold size={14}>{L('యూజర్‌నేమ్ / ఈమెయిల్', 'Username / email')}</T>
+      <TextInput value={login} onChangeText={setLogin} editable={!sentTo} autoCapitalize="none" autoCorrect={false} style={input} placeholder="admin" placeholderTextColor={th.muted} accessibilityLabel="Username" />
+      {!sentTo ? (
+        <Button title={L('OTP పంపండి', 'Send OTP')} icon="chatbubble-ellipses-outline" loading={busy} disabled={busy || login.trim().length < 3} onPress={sendOtp} style={{ marginTop: 16 }} />
+      ) : (
+        <>
+          <T style={{ marginTop: 16 }}>{L(`OTP పంపబడింది: ${sentTo} (10 నిమిషాలు చెల్లుతుంది)`, `OTP sent to ${sentTo} (valid 10 minutes)`)}</T>
+          <TextInput value={code} onChangeText={(v) => setCode(v.replace(/\D/g, '').slice(0, 6))} keyboardType="number-pad" maxLength={6} textContentType="oneTimeCode" autoComplete="sms-otp"
+            placeholder="● ● ● ● ● ●" placeholderTextColor={th.muted} style={[...input, { marginTop: 8, fontSize: 22, letterSpacing: 6, textAlign: 'center' }]} accessibilityLabel="OTP" />
+          <T bold size={14} style={{ marginTop: 14 }}>{L('కొత్త పాస్‌వర్డ్ (10+ అక్షరాలు, అంకెలతో)', 'New password (10+ characters, with numbers)')}</T>
+          <View style={styles.row}>
+            <TextInput value={pw} onChangeText={setPw} secureTextEntry={!show} autoCapitalize="none" autoCorrect={false} style={[...input, { flex: 1 }]} accessibilityLabel="New password" />
+            <Pressable onPress={() => setShow(!show)} style={{ padding: 10 }} accessibilityRole="button"><Ionicons name={show ? 'eye-off-outline' : 'eye-outline'} size={24} color={th.muted} /></Pressable>
+          </View>
+          <T bold size={14} style={{ marginTop: 14 }}>{L('మళ్లీ టైప్ చేయండి', 'Type it again')}</T>
+          <TextInput value={pw2} onChangeText={setPw2} secureTextEntry={!show} autoCapitalize="none" autoCorrect={false} style={input} accessibilityLabel="Repeat new password" />
+          <Button title={L('పాస్‌వర్డ్ మార్చండి', 'Change password')} icon="checkmark-circle-outline" loading={busy} disabled={busy || code.length !== 6 || !pw} onPress={save} style={{ marginTop: 18 }} />
+          <Pressable onPress={() => { setSentTo(null); setCode(''); }} style={{ marginTop: 14, alignItems: 'center' }}><T color={th.green}>{L('OTP మళ్లీ పంపండి', 'Send OTP again')}</T></Pressable>
+        </>
+      )}
       {error ? <T color={th.red} style={{ marginTop: 14 }}>{error}</T> : null}
     </ScrollView>
   );
@@ -181,7 +252,9 @@ export function AdminHomeScreen({ navigation }: any) {
       {item('id-card-outline', L('జర్నలిస్ట్ దరఖాస్తులు', 'Journalist requests'), L('ఆధార్ చూసి ఆమోదించండి', 'Check Aadhaar and approve'), 'AdminRequests', c?.requests)}
       {item('ribbon-outline', L('జర్నలిస్టులు & పాయింట్లు', 'Journalists & points'), L('స్థాయిలు, పాయింట్లు, నిలిపివేత', 'Levels, points, suspend'), 'AdminJournalists')}
       {role === 'SUPER_ADMIN' ? item('people-outline', L('సబ్-అడ్మిన్లు', 'Sub-admins'), L('జిల్లా / మండలానికి సబ్-అడ్మిన్', 'For a district or a mandal'), 'AdminSubAdmins') : null}
-      <Button kind="outline" icon="log-out-outline" title={L('అడ్మిన్ లాగ్ అవుట్', 'Admin log out')} style={{ marginTop: 16 }}
+      <Button kind="outline" icon="key-outline" title={L('పాస్‌వర్డ్ మార్చండి (OTP)', 'Change password (OTP)')} style={{ marginTop: 16 }}
+        onPress={() => navigation.navigate('AdminPassword', { login: (me.data as any)?.username || me.data?.email })} />
+      <Button kind="outline" icon="log-out-outline" title={L('అడ్మిన్ లాగ్ అవుట్', 'Admin log out')} style={{ marginTop: 10 }}
         onPress={async () => { await logout(); qc.clear(); navigation.navigate('Main', { screen: 'Profile' }); }} />
       <T size={12} color={th.muted} style={{ marginTop: 14, textAlign: 'center' }}>
         {L('కంప్యూటర్‌లో కూడా:', 'Also on a computer:')} {serverUrl()}/admin

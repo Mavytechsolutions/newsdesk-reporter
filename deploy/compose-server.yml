@@ -33,6 +33,9 @@ services:
       - SMS_PROVIDER=console
       - SEED_ADMIN_EMAIL=admin@mavynews.in
       - SEED_ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      # master admin logs in as "admin"; password-change OTPs go to this mobile
+      - SEED_ADMIN_USERNAME=admin
+      - ADMIN_RECOVERY_PHONE=8886688864
       - CORS_ORIGINS=http://194.238.17.81:8474
       - PUBLIC_WEB_URL=http://194.238.17.81:8474
       - APP_DOWNLOAD_URL=http://194.238.17.81:8475
