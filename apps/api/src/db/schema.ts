@@ -23,10 +23,14 @@ export const commentStatusEnum = pgEnum('comment_status', ['VISIBLE', 'HIDDEN'])
 export const reportReasonEnum = pgEnum('report_reason', ['FAKE', 'WRONG_INFO', 'OFFENSIVE', 'COPYRIGHT', 'PRIVACY', 'OTHER']);
 export const reportStatusEnum = pgEnum('report_status', ['OPEN', 'RESOLVED', 'REJECTED']);
 export const sourceTypeEnum = pgEnum('source_type', ['STAFF', 'CITIZEN', 'AGENCY', 'AI_ASSISTED']);
+/** Citizen journalist levels: Junior (0–99 approved posts) → Journalist (100+) → Senior (500+, badge). */
+export const contributorLevelEnum = pgEnum('contributor_level', ['JUNIOR', 'JOURNALIST', 'SENIOR']);
+export const applicationStatusEnum = pgEnum('application_status', ['PENDING', 'APPROVED', 'REJECTED']);
 
 export type Role = (typeof roleEnum.enumValues)[number];
 export type ArticleStatus = (typeof articleStatusEnum.enumValues)[number];
 export type Language = (typeof languageEnum.enumValues)[number];
+export type ContributorLevel = (typeof contributorLevelEnum.enumValues)[number];
 
 const ts = (name: string) => timestamp(name, { withTimezone: true });
 
@@ -44,6 +48,12 @@ export const users = pgTable('users', {
   status: userStatusEnum('status').notNull().default('ACTIVE'),
   notifyBreaking: boolean('notify_breaking').notNull().default(true),
   notifyDistrict: boolean('notify_district').notNull().default(true),
+  /** Set when the person is an approved citizen journalist (posts from the app, reviewed by editors). */
+  contributorLevel: contributorLevelEnum('contributor_level'),
+  contributorSince: ts('contributor_since'),
+  contributorSuspendedAt: ts('contributor_suspended_at'),
+  points: integer('points').notNull().default(0),
+  approvedPosts: integer('approved_posts').notNull().default(0),
   createdAt: ts('created_at').notNull().defaultNow(),
   updatedAt: ts('updated_at').notNull().defaultNow(),
   deletedAt: ts('deleted_at'),
@@ -248,6 +258,31 @@ export const reports = pgTable('reports', {
   createdAt: ts('created_at').notNull().defaultNow(),
   resolvedAt: ts('resolved_at'),
 }, (t) => ({ statusIdx: index('reports_status_idx').on(t.status, t.createdAt) }));
+
+/** "Become a journalist" requests from the app. The Aadhaar photo is private and deleted once a decision is made. */
+export const journalistApplications = pgTable('journalist_applications', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  phone: text('phone'),
+  /** Where the person will report from (district or mandal). Decides which sub-admin reviews the request. */
+  locationId: uuid('location_id').notNull().references(() => locations.id),
+  aadhaarFile: text('aadhaar_file'),
+  status: applicationStatusEnum('status').notNull().default('PENDING'),
+  note: text('note'),
+  reviewedBy: uuid('reviewed_by').references(() => users.id),
+  reviewedAt: ts('reviewed_at'),
+  createdAt: ts('created_at').notNull().defaultNow(),
+}, (t) => ({ statusIdx: index('ja_status_idx').on(t.status, t.createdAt), userIdx: index('ja_user_idx').on(t.userId) }));
+
+/** One row per approved (published) story of a citizen journalist. */
+export const pointEvents = pgTable('point_events', {
+  articleId: uuid('article_id').primaryKey().references(() => articles.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  points: integer('points').notNull(),
+  level: contributorLevelEnum('level').notNull(),
+  createdAt: ts('created_at').notNull().defaultNow(),
+}, (t) => ({ userIdx: index('pe_user_idx').on(t.userId, t.createdAt) }));
 
 // ---- relations (used by query builder) ----
 export const articlesRelations = relations(articles, ({ many, one }) => ({

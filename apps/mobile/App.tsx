@@ -21,6 +21,7 @@ import { OnboardingScreen } from './src/screens/OnboardingScreen';
 import { CommentsScreen } from './src/screens/CommentsScreen';
 import { ShareCardHost } from './src/share/ShareCard';
 import { BookmarksScreen, HistoryScreen, LoginScreen, ProfileScreen, TopicsScreen, VideosScreen } from './src/screens/OtherScreens';
+import { BecomeJournalistScreen, JournalistDeskScreen, WriteStoryScreen } from './src/screens/JournalistScreens';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 60_000, retry: 1, gcTime: 30 * 60_000 } },
@@ -70,6 +71,7 @@ function Root() {
   const font = useFont();
   const hydrated = useSettings((s) => s.hydrated);
   const onboarded = useSettings((s) => s.onboarded);
+  const language = useSettings((s) => s.language);
   const authReady = useAuth((s) => s.ready);
   const [fontsLoaded] = useFonts({ NotoSansTelugu_400Regular, NotoSansTelugu_700Bold });
 
@@ -99,6 +101,9 @@ function Root() {
           <Stack.Screen name="Topics" component={TopicsScreen} options={{ title: t.myTopics }} />
           <Stack.Screen name="Comments" component={CommentsScreen} options={{ animation: 'slide_from_bottom' }} />
           <Stack.Screen name="History" component={HistoryScreen} options={{ title: t.history }} />
+          <Stack.Screen name="BecomeJournalist" component={BecomeJournalistScreen} options={{ title: language === 'te' ? 'జర్నలిస్ట్ దరఖాస్తు' : 'Become a journalist' }} />
+          <Stack.Screen name="JournalistDesk" component={JournalistDeskScreen} options={{ title: language === 'te' ? 'నా జర్నలిస్ట్ డెస్క్' : 'My journalist desk' }} />
+          <Stack.Screen name="WriteStory" component={WriteStoryScreen} options={{ title: language === 'te' ? 'వార్త రాయండి' : 'Write a story' }} />
         </Stack.Navigator>
       )}
       <ShareCardHost />

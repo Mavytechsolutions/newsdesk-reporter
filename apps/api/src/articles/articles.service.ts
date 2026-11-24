@@ -13,12 +13,13 @@ import { AuditService } from '../audit/audit.module';
 import { isWithinAny, LocationsService } from '../locations/locations.module';
 import { config } from '../config';
 import { canEdit, UNSCOPED_ROLES, WORKFLOW } from './workflow';
+import { awardForPublish, revokeForTakedown } from '../journalists/points';
 import { CreateArticleDto, NewsroomListQuery, PublicListQuery, TransitionDto, UpdateArticleDto, TranslationDto } from './articles.dto';
 
 const SOURCE_LABELS: Record<string, string> = {
   STAFF: 'MAVY NEWS',
   AGENCY: 'Agency',
-  CITIZEN: 'Citizen report — submitted by a reader',
+  CITIZEN: 'MAVY NEWS citizen journalist — checked by our editors',
   AI_ASSISTED: 'Prepared with AI assistance and reviewed by MAVY NEWS editors',
 };
 
@@ -84,7 +85,7 @@ export class ArticlesService implements OnModuleInit, OnModuleDestroy {
         translations: true, tags: true,
         locations: { with: { location: true } },
         category: true,
-        author: { columns: { id: true, name: true } },
+        author: { columns: { id: true, name: true, contributorLevel: true, phone: true } },
       },
     });
   }
@@ -188,7 +189,10 @@ export class ArticlesService implements OnModuleInit, OnModuleDestroy {
       const res = await tx.update(articles).set(patch).where(and(eq(articles.id, id), eq(articles.status, a.status))).returning({ id: articles.id });
       if (!res.length) throw new BadRequestException('This story was just changed by someone else. Please refresh.');
       await tx.insert(articleStatusHistory).values({ articleId: id, fromStatus: a.status, toStatus: to, actorId: actor.id, note: dto.note });
-      await this.audit.log({ actorId: actor.id, action: `article.${dto.action}`, entity: 'article', entityId: id, ip, metadata: { from: a.status, to, note: dto.note } }, tx as unknown as Db);
+      // citizen journalists: points when a story goes out, taken back if it is taken down
+      const award = to === 'PUBLISHED' || to === 'SCHEDULED' ? await awardForPublish(tx as unknown as Db, id, a.authorId) : null;
+      const revoked = dto.action === 'archive' ? await revokeForTakedown(tx as unknown as Db, id) : null;
+      await this.audit.log({ actorId: actor.id, action: `article.${dto.action}`, entity: 'article', entityId: id, ip, metadata: { from: a.status, to, note: dto.note, award, revokedPoints: revoked?.points } }, tx as unknown as Db);
     });
     return this.require(id);
   }
@@ -196,6 +200,9 @@ export class ArticlesService implements OnModuleInit, OnModuleDestroy {
   async newsroomList(q: NewsroomListQuery, actor: AuthUser) {
     const where: SQL[] = [];
     if (q.status) where.push(eq(articles.status, q.status as ArticleStatus));
+    if (q.statuses) where.push(inArray(articles.status, q.statuses.split(',') as ArticleStatus[]));
+    if (q.source === 'journalist') where.push(eq(articles.sourceType, 'CITIZEN'));
+    if (q.source === 'staff') where.push(ne(articles.sourceType, 'CITIZEN'));
     const reportersOnlySeeOwn = actor.role === 'REPORTER' || actor.role === 'VIDEO_JOURNALIST';
     if (q.mine || reportersOnlySeeOwn) where.push(eq(articles.authorId, actor.id));
     else if (!UNSCOPED_ROLES.includes(actor.role as Role)) {
@@ -225,7 +232,7 @@ export class ArticlesService implements OnModuleInit, OnModuleDestroy {
     if (!ids.length) return map;
     const rows = await this.db.query.articles.findMany({
       where: inArray(articles.id, ids),
-      with: { translations: true, tags: true, locations: { with: { location: true } }, category: true, author: { columns: { id: true, name: true } } },
+      with: { translations: true, tags: true, locations: { with: { location: true } }, category: true, author: { columns: { id: true, name: true, contributorLevel: true, phone: true } } },
     });
     rows.forEach((r) => map.set(r.id, r as FullArticle));
     return map;
@@ -244,6 +251,8 @@ export class ArticlesService implements OnModuleInit, OnModuleDestroy {
       category: { slug: a.category.slug, nameEn: a.category.nameEn, nameTe: a.category.nameTe },
       locations: a.locations.map((l) => ({ id: l.location.id, type: l.location.type, nameEn: l.location.nameEn, nameTe: l.location.nameTe })),
       reporter: a.author?.name ?? null,
+      /** set for citizen journalists: JUNIOR | JOURNALIST | SENIOR (senior shows a badge) */
+      reporterLevel: a.sourceType === 'CITIZEN' ? a.author?.contributorLevel ?? null : null,
       sourceType: a.sourceType,
       sourceLabel: a.sourceName ?? SOURCE_LABELS[a.sourceType],
       isBreaking: a.isBreaking,

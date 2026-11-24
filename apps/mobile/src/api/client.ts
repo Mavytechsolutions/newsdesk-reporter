@@ -111,6 +111,28 @@ export async function api<T>(path: string, opts: { method?: string; body?: unkno
   return data as T;
 }
 
+/** Sends a form with one photo (multipart). Works on phones and in the web preview. */
+export async function apiUpload<T>(path: string, fields: Record<string, string>, file: { uri: string; name: string; type?: string }, retry = true): Promise<T> {
+  const { access } = useAuth.getState();
+  const fd = new FormData();
+  Object.entries(fields).forEach(([k, v]) => fd.append(k, v));
+  if (Platform.OS === 'web') fd.append('file', await (await fetch(file.uri)).blob(), file.name);
+  else fd.append('file', { uri: file.uri, name: file.name, type: file.type ?? 'image/jpeg' } as any);
+  let res: Response;
+  try {
+    res = await fetch(`${base()}${path}`, { method: 'POST', headers: access ? { Authorization: `Bearer ${access}` } : {}, body: fd });
+  } catch {
+    throw new ApiError(0, 'No internet connection');
+  }
+  if (res.status === 401 && retry && (await tryRefresh())) return apiUpload<T>(path, fields, file, false);
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    const msg = Array.isArray(data?.message) ? data.message[0] : data?.message;
+    throw new ApiError(res.status, msg ?? 'Something went wrong');
+  }
+  return data as T;
+}
+
 export const qs = (params: Record<string, string | number | boolean | undefined | null | string[]>) => {
   const parts = Object.entries(params)
     .filter(([, v]) => v !== undefined && v !== null && v !== '' && !(Array.isArray(v) && !v.length))

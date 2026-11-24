@@ -15,6 +15,8 @@ export function configureApp(app: INestApplication) {
       { path: 'media/:file', method: RequestMethod.GET },
       { path: 'newsroom', method: RequestMethod.GET },
       { path: 'newsroom/app.js', method: RequestMethod.GET },
+      { path: 'admin', method: RequestMethod.GET },
+      { path: 'admin/app.js', method: RequestMethod.GET },
       { path: 'fonts/:file', method: RequestMethod.GET },
     ],
   });

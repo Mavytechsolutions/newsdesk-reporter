@@ -18,7 +18,28 @@ import { AuthUser, ClientIp, CurrentUser, Public, Roles } from '../common/auth.d
 import { AuditService } from '../audit/audit.module';
 import { config } from '../config';
 
-const MAX_BYTES = 10 * 1024 * 1024;
+export const MAX_BYTES = 10 * 1024 * 1024;
+
+/** Re-encodes a phone photo: applies rotation, shrinks it, drops all metadata (incl. GPS). Throws a friendly error if it is not a photo. */
+export async function processPhoto(buf: Buffer, maxSide = 1280, quality = 80) {
+  try {
+    return await sharp(buf, { failOn: 'error', limitInputPixels: 60_000_000 })
+      .rotate()
+      .resize({ width: maxSide, height: maxSide, fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality, mozjpeg: true })
+      .toBuffer();
+  } catch {
+    throw new BadRequestException('This file is not a photo we can use. Please choose a JPG or PNG photo.');
+  }
+}
+
+/** Saves a processed public story photo and returns its public URL. */
+export async function savePublicPhoto(out: Buffer) {
+  if (!existsSync(config.mediaDir)) mkdirSync(config.mediaDir, { recursive: true });
+  const name = `${randomBytes(16).toString('hex')}.jpg`;
+  await fs.writeFile(path.join(config.mediaDir, name), out);
+  return { name, url: `${config.publicWebUrl}/media/${name}` };
+}
 const FILE_RE = /^[a-f0-9]{32}\.jpg$/;
 const PUBLIC_DIR = path.join(process.cwd(), 'public');
 
@@ -34,21 +55,10 @@ class MediaController {
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_BYTES, files: 1 } }))
   async upload(@UploadedFile() file: Express.Multer.File | undefined, @CurrentUser() u: AuthUser, @ClientIp() ip: string) {
     if (!file) throw new BadRequestException('Choose a photo to upload');
-    let out: Buffer;
-    try {
-      // Reads JPEG/PNG/WebP/HEIC-like inputs; .rotate() applies phone orientation; metadata (incl. GPS) is dropped.
-      out = await sharp(file.buffer, { failOn: 'error', limitInputPixels: 60_000_000 })
-        .rotate()
-        .resize({ width: 1280, height: 1280, fit: 'inside', withoutEnlargement: true })
-        .jpeg({ quality: 80, mozjpeg: true })
-        .toBuffer();
-    } catch {
-      throw new BadRequestException('This file is not a photo we can use. Please choose a JPG or PNG photo.');
-    }
-    const name = `${randomBytes(16).toString('hex')}.jpg`;
-    await fs.writeFile(path.join(config.mediaDir, name), out);
+    const out = await processPhoto(file.buffer);
+    const { name, url } = await savePublicPhoto(out);
     await this.audit.log({ actorId: u.id, action: 'media.upload', entity: 'media', entityId: name, metadata: { bytes: out.length }, ip });
-    return { url: `${config.publicWebUrl}/media/${name}`, bytes: out.length };
+    return { url, bytes: out.length };
   }
 
   @Public() @Get('media/:file')
@@ -76,6 +86,19 @@ class MediaController {
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     res.type('font/ttf').sendFile(path.join(PUBLIC_DIR, 'fonts', file));
+  }
+
+  @Public() @Get('admin')
+  adminPage(@Res() res: Response) {
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Content-Security-Policy', "default-src 'self'; img-src 'self' blob: data: http: https:; font-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; script-src-attr 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'");
+    res.type('html').sendFile(path.join(PUBLIC_DIR, 'admin.html'));
+  }
+
+  @Public() @Get('admin/app.js')
+  adminScript(@Res() res: Response) {
+    res.setHeader('Cache-Control', 'no-cache');
+    res.type('js').sendFile(path.join(PUBLIC_DIR, 'admin.js'));
   }
 
   @Public() @Get('newsroom/app.js')

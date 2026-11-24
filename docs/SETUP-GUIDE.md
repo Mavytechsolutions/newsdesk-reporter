@@ -6,13 +6,23 @@
 |---|---|
 | **Download the app (APK)** | http://194.238.17.81:8475 (open on your phone) |
 | **Newsroom (add stories)** | http://194.238.17.81:8474/newsroom |
+| **Admin (review stories, approve journalists, sub-admins)** | http://194.238.17.81:8474/admin |
 | News server | http://194.238.17.81:8474/api/v1/health |
 | Newsroom admin login | admin@mavynews.in (password: in hPanel → VPS → Docker Manager → **mavy-news** → Environment → `ADMIN_PASSWORD`) |
 
 * These run in their own Docker projects, **mavy-news** (server + database) and **mavy-apk** (app builder + download page), separate from apbja and rentipa.
 * **To build a new APK after code changes:** hPanel → VPS → Docker Manager → **mavy-apk** → Restart. Wait about 20 minutes, then the download page shows the new version.
 * **To update the server after code changes:** restart **mavy-news**. It downloads the latest code from GitHub (branch `mavy-news-app` of `newsdesk-reporter`).
-* **Login OTP (until real SMS is set up):** open **mavy-news** → Logs and look for `DEV OTP`.
+* **Login OTP (testing only):** every number logs in with **1234** (`OTP_FIXED_CODE` in the server settings). Remove it before launch and connect a real SMS service.
+
+### Citizen journalists (from the app)
+1. In the app: **Profile → జర్నలిస్ట్ అవ్వండి** → name (as on Aadhaar), district / mandal, Aadhaar photo, declaration → send.
+2. Admin page → **దరఖాస్తులు**: view the Aadhaar photo, then **Approve** or **Reject** (with a reason). The Aadhaar photo is deleted from the server right after the decision. The Aadhaar number is never asked.
+3. Approved people start as **Junior Journalist**. They write stories in the app; stories go to **వార్తల సమీక్ష** on the admin page.
+4. **Approve & publish** → the journalist earns points: Junior 5 · Journalist (after 100 published stories) 10 · Senior Journalist (after 500, gold badge) 20. If a story is taken down, its points are taken back.
+5. **Send back** sends the story to the journalist with your note; they fix it in the app and resend.
+6. **Sub-admins** (Super Admin only): admin page → **సబ్-అడ్మిన్లు** → name, email, password, district and (optionally) mandal. A sub-admin logs in at the same admin page and sees only stories and journalist requests from their own area.
+7. Limits: 20 stories a day per journalist; photos must be uploaded from the app (no internet photos); a journalist's name can only be changed by the admin.
 
 ---
 

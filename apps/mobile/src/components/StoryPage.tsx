@@ -9,6 +9,7 @@
  */
 import React, { useMemo, useRef, useState } from 'react';
 import { Animated, Modal, PanResponder, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { levelName } from '../screens/JournalistScreens';
 import { Ionicons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
 import { useNavigation } from '@react-navigation/native';
@@ -27,6 +28,7 @@ export function StoryPage({ a, height, index, total, onTap }: { a: ArticleCard; 
   const th = useTheme();
   const t = useT();
   const name = useName();
+  const lang = useSettings((s) => s.language);
   const nav = useNavigation<any>();
   const [menu, setMenu] = useState(false);
   const r = useReaction(a, () => nav.navigate('Login'));
@@ -98,8 +100,11 @@ export function StoryPage({ a, height, index, total, onTap }: { a: ArticleCard; 
             <View style={styles.byline}>
               <View style={[styles.avatar, { backgroundColor: accent }]}><T bold size={12} color="#fff">{initials(a.reporter)}</T></View>
               <View style={{ flex: 1, marginLeft: 8 }}>
-                <T bold size={12.5} numberOfLines={1}>{a.reporter || 'MAVY NEWS'}</T>
-                <T size={11} color={th.muted} numberOfLines={1}>{a.sourceLabel}</T>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <T bold size={12.5} numberOfLines={1} style={{ flexShrink: 1 }}>{a.reporter || 'MAVY NEWS'}</T>
+                  {a.reporterLevel === 'SENIOR' ? <Ionicons name="ribbon" size={14} color="#D4A017" style={{ marginLeft: 3 }} accessibilityLabel="Senior Journalist" /> : null}
+                </View>
+                <T size={11} color={th.muted} numberOfLines={1}>{a.reporterLevel ? `${levelName(a.reporterLevel, lang)} · MAVY NEWS` : a.sourceLabel}</T>
               </View>
               <Pressable onPress={open} hitSlop={8} accessibilityRole="link" style={[styles.readPill, { borderColor: accent }]}>
                 <T bold size={12.5} color={accent}>{t.readMore}</T>

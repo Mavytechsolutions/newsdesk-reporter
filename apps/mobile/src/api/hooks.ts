@@ -2,7 +2,7 @@ import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-quer
 import { Alert } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { api, qs, useAuth } from './client';
-import type { ArticleCard, Category, Comment, Me, Page, Place } from './types';
+import type { ArticleCard, Category, Comment, JournalistMe, Me, MyPost, Page, Place } from './types';
 import { useEffect, useState } from 'react';
 import { useSettings } from '../store/settings';
 
@@ -138,4 +138,17 @@ export function useComments(articleId: string) {
 
 export function reportArticle(id: string, reason: string, note?: string) {
   return api<{ received: boolean }>(`/articles/${id}/report`, { method: 'POST', body: { reason, note: note?.trim() || undefined } });
+}
+
+/** My citizen-journalist status, level and points (logged-in readers only). */
+export function useJournalistMe() {
+  const loggedIn = useAuth((s) => s.loggedIn);
+  return useQuery({ queryKey: ['journalist', 'me'], queryFn: () => api<JournalistMe>('/journalist/me'), enabled: loggedIn });
+}
+export function useMyPosts(enabled = true) {
+  const loggedIn = useAuth((s) => s.loggedIn);
+  return useQuery({ queryKey: ['journalist', 'posts'], queryFn: () => api<MyPost[]>('/journalist/posts?limit=50'), enabled: loggedIn && enabled });
+}
+export function useLeaderboard() {
+  return useQuery({ queryKey: ['journalist', 'leaderboard'], queryFn: () => api<{ name: string; level: string; points: number; approvedPosts: number }[]>('/journalist/leaderboard'), staleTime: 300_000 });
 }

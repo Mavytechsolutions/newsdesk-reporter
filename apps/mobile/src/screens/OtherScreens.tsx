@@ -7,12 +7,13 @@ import Constants from 'expo-constants';
 import { FlipDeck } from '../components/FlipDeck';
 import { StoryPage } from '../components/StoryPage';
 import { Button, Chip, EmptyState, ErrorState, FeedSkeleton, T } from '../components/ui';
-import { useCategories, useHistory, useMe } from '../api/hooks';
+import { useCategories, useHistory, useJournalistMe, useMe } from '../api/hooks';
 import { api, logout, saveLogin, useAuth, ApiError, serverUrl, switchServer, testServer } from '../api/client';
 import type { ArticleCard } from '../api/types';
 import { useFont, useTheme } from '../theme';
 import { useName, useT } from '../i18n';
 import { useSettings } from '../store/settings';
+import { JournalistCard } from './JournalistScreens';
 
 // ---------------- Saved (offline) ----------------
 export function BookmarksScreen({ navigation }: any) {
@@ -149,6 +150,8 @@ export function ProfileScreen({ navigation }: any) {
   const [editing, setEditing] = useState(false);
   const [newName, setNewName] = useState('');
   const [devTaps, setDevTaps] = useState(0); // hidden technical settings for the developer
+  const journalist = useJournalistMe();
+  const nameLocked = !!journalist.data?.level; // verified journalist name = their byline; only the admin can change it
 
   const changeLanguage = (l: 'te' | 'en') => {
     setLanguage(l);
@@ -174,9 +177,9 @@ export function ProfileScreen({ navigation }: any) {
               }} />
             </View>
           ) : (
-            <Pressable onPress={() => { setNewName(me.data!.name ?? ''); setEditing(true); }} style={styles.row}>
+            <Pressable disabled={nameLocked} onPress={() => { setNewName(me.data!.name ?? ''); setEditing(true); }} style={styles.row}>
               <T bold size={18} style={{ marginTop: 6 }}>{me.data.name || t.name}</T>
-              <Ionicons name="create-outline" size={18} color={th.muted} style={{ marginLeft: 6, marginTop: 6 }} />
+              <Ionicons name={nameLocked ? 'checkmark-circle' : 'create-outline'} size={18} color={nameLocked ? th.green : th.muted} style={{ marginLeft: 6, marginTop: 6 }} />
             </Pressable>
           )
         ) : null}
@@ -190,6 +193,8 @@ export function ProfileScreen({ navigation }: any) {
           </>
         )}
       </View>
+
+      <JournalistCard navigation={navigation} />
 
       <Section title={t.language}>
         <View style={styles.row}>

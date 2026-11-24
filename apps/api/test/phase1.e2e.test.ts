@@ -82,7 +82,8 @@ describe('Health & reference data', () => {
     const states = await http.get(api('/locations')).expect(200);
     expect(states.body.map((s: any) => s.nameEn)).toEqual(['Andhra Pradesh', 'Telangana']);
     const districts = await http.get(api(`/locations?parentId=${loc['andhra-pradesh']}`)).expect(200);
-    expect(districts.body.map((d: any) => d.nameEn)).toEqual(['Anantapur', 'Sri Sathya Sai']);
+    expect(districts.body).toHaveLength(28); // AP after the Dec 2025 reorganisation
+    expect(districts.body.map((d: any) => d.nameEn)).toEqual(expect.arrayContaining(['Anantapur', 'Sri Sathya Sai', 'Polavaram', 'Markapuram']));
     const found = await http.get(api('/locations/search').concat('?q=' + encodeURIComponent('లేపాక్షి'))).expect(200);
     expect(found.body[0].nameEn).toBe('Lepakshi');
     const one = await http.get(api(`/locations/${loc['mandal-lepakshi--sri-sathya-sai']}`)).expect(200);

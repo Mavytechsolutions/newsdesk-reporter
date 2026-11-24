@@ -77,6 +77,13 @@
             "com.whatsapp.w4b"
           ]
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "MAVY NEWS needs your photos to attach a news photo or your Aadhaar card when you apply as a journalist.",
+          "cameraPermission": "MAVY NEWS uses the camera so you can take a news photo or a photo of your Aadhaar card."
+        }
       ]
     ]
   }

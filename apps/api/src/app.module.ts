@@ -1,3 +1,4 @@
+import { JournalistsModule } from './journalists/journalists.module';
 import { Controller, Get, Inject, Module, ServiceUnavailableException } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
@@ -34,7 +35,7 @@ class HealthController {
 @Module({
   imports: [
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 300 }]),
-    DbModule, AuditModule, AuthModule, LocationsModule, CategoriesModule, UsersModule, StaffModule, ArticlesModule, FeedModule, CommunityModule, WebPageModule, MediaModule,
+    DbModule, AuditModule, AuthModule, LocationsModule, CategoriesModule, UsersModule, StaffModule, JournalistsModule, ArticlesModule, FeedModule, CommunityModule, WebPageModule, MediaModule,
   ],
   controllers: [HealthController],
   providers: [

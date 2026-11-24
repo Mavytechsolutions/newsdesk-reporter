@@ -2,7 +2,7 @@ import { Transform, Type } from 'class-transformer';
 
 const toBool = () => Transform(({ value }) => value === true || value === 'true' || value === '1');
 import {
-  ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsIn, IsInt, IsISO8601, IsOptional, IsString, IsUrl,
+  ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsIn, IsInt, IsISO8601, IsOptional, IsString, IsUrl, Matches,
   IsUUID, Max, MaxLength, Min, MinLength, ValidateNested,
 } from 'class-validator';
 import { WORKFLOW, WorkflowAction } from './workflow';
@@ -61,6 +61,10 @@ export class NewsroomListQuery {
   @IsOptional() @IsIn(['DRAFT', 'SUBMITTED', 'IN_REVIEW', 'CHANGES_REQUESTED', 'APPROVED', 'SCHEDULED', 'PUBLISHED', 'REJECTED', 'ARCHIVED'])
   status?: string;
   @IsOptional() @toBool() @IsBoolean() mine?: boolean;
+  /** 'journalist' = stories sent from the app by citizen journalists; 'staff' = newsroom stories */
+  @IsOptional() @IsIn(['journalist', 'staff']) source?: 'journalist' | 'staff';
+  /** comma-separated statuses, e.g. SUBMITTED,IN_REVIEW (used by the admin review queue) */
+  @IsOptional() @Matches(/^[A-Z_]+(,[A-Z_]+){0,8}$/) statuses?: string;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) limit?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) offset?: number;
 }

@@ -46,6 +46,11 @@ export class UsersService {
   }
 
   async update(userId: string, dto: UpdateProfileDto) {
+    if (dto.name !== undefined) {
+      // a journalist's name is checked against their Aadhaar and appears on every story: only the admin can change it
+      const [u] = await this.db.select({ level: users.contributorLevel, name: users.name }).from(users).where(eq(users.id, userId));
+      if (u?.level && dto.name.trim() !== (u.name ?? '')) throw new BadRequestException('Your name is verified as a MAVY NEWS journalist. Ask the admin to change it.');
+    }
     await this.db.update(users).set({ ...dto, updatedAt: new Date() }).where(eq(users.id, userId));
     return this.me(userId);
   }
