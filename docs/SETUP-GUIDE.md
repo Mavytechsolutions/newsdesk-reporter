@@ -6,7 +6,7 @@
 |---|---|
 | **Download the app (APK)** | http://194.238.17.81:8475 (open on your phone) |
 | **Newsroom (add stories)** | http://194.238.17.81:8474/newsroom |
-| **Admin (review stories, approve journalists, sub-admins)** | http://194.238.17.81:8474/admin |
+| **Admin (review stories, approve journalists, sub-admins)** | In the app: **Profile → అడ్మిన్ / సబ్-అడ్మిన్ లాగిన్** (email + password). On a computer: http://194.238.17.81:8474/admin |
 | News server | http://194.238.17.81:8474/api/v1/health |
 | Newsroom admin login | admin@mavynews.in (password: in hPanel → VPS → Docker Manager → **mavy-news** → Environment → `ADMIN_PASSWORD`) |
 
@@ -21,7 +21,7 @@
 3. Approved people start as **Junior Journalist**. They write stories in the app; stories go to **వార్తల సమీక్ష** on the admin page.
 4. **Approve & publish** → the journalist earns points: Junior 5 · Journalist (after 100 published stories) 10 · Senior Journalist (after 500, gold badge) 20. If a story is taken down, its points are taken back.
 5. **Send back** sends the story to the journalist with your note; they fix it in the app and resend.
-6. **Sub-admins** (Super Admin only): admin page → **సబ్-అడ్మిన్లు** → name, email, password, district and (optionally) mandal. A sub-admin logs in at the same admin page and sees only stories and journalist requests from their own area.
+6. **Sub-admins** (Super Admin only): app admin panel (or web admin page) → **సబ్-అడ్మిన్లు** → name, email, password, district and (optionally) mandal. A sub-admin logs in from the same app (Profile → admin login) or the web admin page and sees only stories and journalist requests from their own area.
 7. Limits: 20 stories a day per journalist; photos must be uploaded from the app (no internet photos); a journalist's name can only be changed by the admin.
 
 ---

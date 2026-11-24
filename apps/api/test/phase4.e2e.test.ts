@@ -131,6 +131,13 @@ describe('Becoming a journalist', () => {
   });
 });
 
+describe('Admin login inside the app', () => {
+  it('/me tells the app what this session may do', async () => {
+    expect((await http.get(api('/me')).set(as(ananSub)).expect(200)).body.sessionRole).toBe('DISTRICT_EDITOR');
+    expect((await http.get(api('/me')).set(as(reader)).expect(200)).body.sessionRole).toBe('READER');
+  });
+});
+
 describe('Posting from the app and review', () => {
   let storyId: string;
   it('a journalist uploads a photo and sends a story; it waits for review', async () => {

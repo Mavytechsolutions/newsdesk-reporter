@@ -14,6 +14,7 @@ import { useFont, useTheme } from '../theme';
 import { useName, useT } from '../i18n';
 import { useSettings } from '../store/settings';
 import { JournalistCard } from './JournalistScreens';
+import { ADMIN_ROLES } from './AdminScreens';
 
 // ---------------- Saved (offline) ----------------
 export function BookmarksScreen({ navigation }: any) {
@@ -133,6 +134,10 @@ export function LoginScreen({ navigation }: any) {
         </>
       )}
       {error ? <T color={th.red} style={{ marginTop: 14 }}>{error}</T> : null}
+      <Pressable onPress={() => navigation.replace('AdminLogin')} style={[styles.row, { marginTop: 36, justifyContent: 'center' }]} accessibilityRole="link">
+        <Ionicons name="shield-checkmark-outline" size={18} color={th.muted} />
+        <T color={th.muted} style={{ marginLeft: 6 }}>{useSettings.getState().language === 'te' ? 'అడ్మిన్ / సబ్-అడ్మిన్ లాగిన్ (ఈమెయిల్)' : 'Admin / sub-admin login (email)'}</T>
+      </Pressable>
     </ScrollView>
   );
 }
@@ -152,6 +157,7 @@ export function ProfileScreen({ navigation }: any) {
   const [devTaps, setDevTaps] = useState(0); // hidden technical settings for the developer
   const journalist = useJournalistMe();
   const nameLocked = !!journalist.data?.level; // verified journalist name = their byline; only the admin can change it
+  const isAdmin = loggedIn && !!me.data?.sessionRole && ADMIN_ROLES.includes(me.data.sessionRole);
 
   const changeLanguage = (l: 'te' | 'en') => {
     setLanguage(l);
@@ -183,7 +189,7 @@ export function ProfileScreen({ navigation }: any) {
             </Pressable>
           )
         ) : null}
-        {loggedIn && me.data ? <T color={th.muted}>{me.data.phone}</T> : null}
+        {loggedIn && me.data ? <T color={th.muted}>{isAdmin ? me.data.email : me.data.phone}</T> : null}
         {loggedIn && me.isError ? <ErrorState error={me.error} onRetry={() => me.refetch()} /> : null}
         {!loggedIn && (
           <>
@@ -194,7 +200,19 @@ export function ProfileScreen({ navigation }: any) {
         )}
       </View>
 
-      <JournalistCard navigation={navigation} />
+      {isAdmin ? (
+        <Pressable onPress={() => navigation.navigate('Admin')} accessibilityRole="button"
+          style={({ pressed }) => [styles.card, styles.row, { backgroundColor: th.navy, opacity: pressed ? 0.85 : 1 }]}>
+          <Ionicons name="shield-checkmark" size={26} color="#fff" />
+          <View style={{ flex: 1, marginLeft: 12 }}>
+            <T bold size={17} color="#fff">{language === 'te' ? 'అడ్మిన్ ప్యానెల్' : 'Admin panel'}</T>
+            <T size={12.5} color="#C9D3E3">{language === 'te' ? 'వార్తల సమీక్ష · దరఖాస్తులు · జర్నలిస్టులు · సబ్-అడ్మిన్లు' : 'Review · Requests · Journalists · Sub-admins'}</T>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#fff" />
+        </Pressable>
+      ) : (
+        <JournalistCard navigation={navigation} />
+      )}
 
       <Section title={t.language}>
         <View style={styles.row}>
@@ -230,6 +248,12 @@ export function ProfileScreen({ navigation }: any) {
           })} />
         </>
       )}
+      {!isAdmin ? (
+        <Pressable onPress={() => navigation.navigate('AdminLogin')} style={[styles.row, { justifyContent: 'center', marginTop: 16 }]} accessibilityRole="link">
+          <Ionicons name="shield-checkmark-outline" size={16} color={th.muted} />
+          <T size={13} color={th.muted} style={{ marginLeft: 6 }}>{language === 'te' ? 'అడ్మిన్ / సబ్-అడ్మిన్ లాగిన్' : 'Admin / sub-admin login'}</T>
+        </Pressable>
+      ) : null}
       {devTaps >= 7 ? <ServerSetting /> : null}
       <Pressable onPress={() => setDevTaps((n) => n + 1)} accessibilityRole="text">
         <T size={12} color={th.muted} style={{ textAlign: 'center', marginTop: 20 }}>

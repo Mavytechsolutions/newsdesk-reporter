@@ -22,6 +22,7 @@ import { CommentsScreen } from './src/screens/CommentsScreen';
 import { ShareCardHost } from './src/share/ShareCard';
 import { BookmarksScreen, HistoryScreen, LoginScreen, ProfileScreen, TopicsScreen, VideosScreen } from './src/screens/OtherScreens';
 import { BecomeJournalistScreen, JournalistDeskScreen, WriteStoryScreen } from './src/screens/JournalistScreens';
+import { AdminHomeScreen, AdminJournalistsScreen, AdminLoginScreen, AdminRequestsScreen, AdminReviewScreen, AdminSubAdminsScreen } from './src/screens/AdminScreens';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 60_000, retry: 1, gcTime: 30 * 60_000 } },
@@ -104,6 +105,12 @@ function Root() {
           <Stack.Screen name="BecomeJournalist" component={BecomeJournalistScreen} options={{ title: language === 'te' ? 'జర్నలిస్ట్ దరఖాస్తు' : 'Become a journalist' }} />
           <Stack.Screen name="JournalistDesk" component={JournalistDeskScreen} options={{ title: language === 'te' ? 'నా జర్నలిస్ట్ డెస్క్' : 'My journalist desk' }} />
           <Stack.Screen name="WriteStory" component={WriteStoryScreen} options={{ title: language === 'te' ? 'వార్త రాయండి' : 'Write a story' }} />
+          <Stack.Screen name="AdminLogin" component={AdminLoginScreen} options={{ title: '', presentation: 'modal' }} />
+          <Stack.Screen name="Admin" component={AdminHomeScreen} options={{ title: language === 'te' ? 'అడ్మిన్ ప్యానెల్' : 'Admin panel' }} />
+          <Stack.Screen name="AdminReview" component={AdminReviewScreen} options={{ title: language === 'te' ? 'వార్తల సమీక్ష' : 'Review stories' }} />
+          <Stack.Screen name="AdminRequests" component={AdminRequestsScreen} options={{ title: language === 'te' ? 'జర్నలిస్ట్ దరఖాస్తులు' : 'Journalist requests' }} />
+          <Stack.Screen name="AdminJournalists" component={AdminJournalistsScreen} options={{ title: language === 'te' ? 'జర్నలిస్టులు' : 'Journalists' }} />
+          <Stack.Screen name="AdminSubAdmins" component={AdminSubAdminsScreen} options={{ title: language === 'te' ? 'సబ్-అడ్మిన్లు' : 'Sub-admins' }} />
         </Stack.Navigator>
       )}
       <ShareCardHost />

@@ -107,7 +107,8 @@ export class UsersService {
 @Controller('me')
 class MeController {
   constructor(private readonly svc: UsersService) {}
-  @Get() me(@CurrentUser() u: AuthUser) { return this.svc.me(u.id); }
+  /** sessionRole = what this login may do right now (phone/OTP logins are always READER; email+password gives newsroom powers) */
+  @Get() async me(@CurrentUser() u: AuthUser) { return { ...(await this.svc.me(u.id)), sessionRole: u.role }; }
   @Patch() update(@CurrentUser() u: AuthUser, @Body() dto: UpdateProfileDto) { return this.svc.update(u.id, dto); }
   @Put('locations') setLocations(@CurrentUser() u: AuthUser, @Body() dto: SetLocationsDto) { return this.svc.setLocations(u.id, dto); }
   @Put('categories') setCategories(@CurrentUser() u: AuthUser, @Body() dto: SetCategoriesDto) { return this.svc.setCategories(u.id, dto); }

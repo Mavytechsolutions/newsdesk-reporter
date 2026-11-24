@@ -193,7 +193,7 @@ function Progress({ approved, next, lang }: { approved: number; next: { level: J
 }
 
 // ---------- shared: place picker (state → district → mandal) ----------
-function PlaceSelect({ value, onChange }: { value: { district?: Place; mandal?: Place }; onChange: (v: { district?: Place; mandal?: Place }) => void }) {
+export function PlaceSelect({ value, onChange }: { value: { district?: Place; mandal?: Place }; onChange: (v: { district?: Place; mandal?: Place }) => void }) {
   const th = useTheme();
   const w = useW();
   const name = useName();

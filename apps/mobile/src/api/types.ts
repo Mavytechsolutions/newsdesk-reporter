@@ -59,6 +59,10 @@ export interface Page {
 export interface Me {
   id: string;
   phone: string | null;
+  email?: string | null;
+  role?: string;
+  /** what this login may do right now: READER for phone logins; the staff role for email + password logins */
+  sessionRole?: string;
   name: string | null;
   language: Lang;
   locations: (Place & { isPrimary: boolean })[];
