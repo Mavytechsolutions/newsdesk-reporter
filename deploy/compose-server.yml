@@ -36,8 +36,8 @@ services:
       # master admin logs in as "admin"; password-change OTPs go to this mobile
       - SEED_ADMIN_USERNAME=admin
       - ADMIN_RECOVERY_PHONE=8886688864
-      - CORS_ORIGINS=http://194.238.17.81:8474
-      - PUBLIC_WEB_URL=http://194.238.17.81:8474
+      - CORS_ORIGINS=https://www.mavynews.com,https://mavynews.com,http://194.238.17.81:8474
+      - PUBLIC_WEB_URL=https://www.mavynews.com
       - APP_DOWNLOAD_URL=http://194.238.17.81:8475
       - MEDIA_DIR=/data/media
       # TESTING ONLY: every number logs in with OTP 1234. Remove this line when real SMS is set up.
