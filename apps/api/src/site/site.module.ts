@@ -184,7 +184,7 @@ ${o.band ?? ''}
 </div>
 <footer class="foot"><div class="wrap">
   <div><b>MAVY <span>NEWS</span></b><p>${T(ctx, 'అనంతపురం, శ్రీ సత్యసాయి జిల్లాల స్థానిక వార్తలు — తెలుగులో, ఇంగ్లీష్‌లో.', 'Local news from Anantapur and Sri Sathya Sai districts, in Telugu and English.')}</p><small>© ${new Date().getFullYear()} MAVY TECH SOLUTIONS PVT LTD</small></div>
-  <ul><li><a href="/about">${T(ctx, 'మా గురించి', 'About us')}</a></li><li><a href="/grievance">${T(ctx, 'ఫిర్యాదులు (గ్రీవెన్స్)', 'Grievances')}</a></li><li><a href="/privacy">${T(ctx, 'గోప్యతా విధానం', 'Privacy policy')}</a></li></ul>
+  <ul><li><a href="/delete-account">${T(ctx, 'ఖాతా తొలగింపు', 'Delete account')}</a></li><li><a href="/about">${T(ctx, 'మా గురించి', 'About us')}</a></li><li><a href="/grievance">${T(ctx, 'ఫిర్యాదులు (గ్రీవెన్స్)', 'Grievances')}</a></li><li><a href="/privacy">${T(ctx, 'గోప్యతా విధానం', 'Privacy policy')}</a></li></ul>
   <ul>${config.appDownloadUrl ? `<li><a href="${esc(config.appDownloadUrl)}">${T(ctx, 'యాప్ డౌన్‌లోడ్ (Android)', 'Download the Android app')}</a></li>` : ''}<li><a href="/c/breaking">${T(ctx, 'బ్రేకింగ్ న్యూస్', 'Breaking news')}</a></li><li><a href="/d/dist-anantapur">${T(ctx, 'అనంతపురం వార్తలు', 'Anantapur news')}</a></li><li><a href="/d/dist-sri-sathya-sai">${T(ctx, 'శ్రీ సత్యసాయి వార్తలు', 'Sri Sathya Sai news')}</a></li></ul>
 </div></footer>
 <script src="/site/site.js" defer></script>
@@ -450,6 +450,35 @@ ${officer}</div>`;
     res.setHeader('Cache-Control', file.endsWith('.css') || file.endsWith('.js') ? 'public, max-age=3600' : 'public, max-age=31536000, immutable');
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.type(type).sendFile(p);
+  }
+
+  /** Play Store build + store images, fetched by the Play Console upload page. Fixed names only. */
+  @Get('release/:file')
+  release(@Param('file') file: string, @Res() res: Response) {
+    if (!/^[a-z0-9-]+\.(aab|png|txt)$/.test(file)) throw new NotFoundException();
+    const dirs = [path.join(process.env.APK_DIR ?? '/data/apk', 'release'), path.join(process.cwd(), 'public', 'store')];
+    const p = dirs.map((d) => path.join(d, file)).find((x) => existsSync(x));
+    if (!p) throw new NotFoundException();
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cache-Control', 'no-store');
+    res.type(file.endsWith('.aab') ? 'application/octet-stream' : file.endsWith('.png') ? 'image/png' : 'text/plain').sendFile(p);
+  }
+
+  @Get('delete-account')
+  async deleteAccount(@Req() req: Request, @Res() res: Response) {
+    const ctx = await this.ctx(req, res);
+    const body = `<div class="doc"><h1>${T(ctx, 'MAVY NEWS ఖాతా తొలగింపు', 'Delete your MAVY NEWS account')}</h1>
+<p>${T(ctx, 'MAVY NEWS (MAVY TECH SOLUTIONS PVT LTD) యాప్ ఖాతాను, దానికి సంబంధించిన వివరాలను మీరు ఎప్పుడైనా తొలగించవచ్చు.', 'You can delete your MAVY NEWS (MAVY TECH SOLUTIONS PVT LTD) app account and its data at any time.')}</p>
+<h2>${T(ctx, 'యాప్‌లో', 'In the app')}</h2>
+<ol><li>${T(ctx, 'MAVY NEWS యాప్ తెరిచి, మీ మొబైల్ నంబర్‌తో లాగిన్ అవ్వండి.', 'Open the MAVY NEWS app and log in with your mobile number.')}</li><li>${T(ctx, '"ప్రొఫైల్" → కిందకు స్క్రోల్ చేసి "నా ఖాతాను తొలగించు" నొక్కండి.', 'Go to "Profile", scroll down and tap "Delete my account".')}</li><li>${T(ctx, 'నిర్ధారించండి. వెంటనే తొలగించబడుతుంది.', 'Confirm. It is deleted straight away.')}</li></ol>
+<h2>${T(ctx, 'యాప్ లేకుండా', 'Without the app')}</h2>
+<p>${T(ctx, 'మీ మొబైల్ నంబర్‌తో', 'Email us from any address with your mobile number to')} <a href="mailto:mavytechsolutions@gmail.com?subject=Delete%20my%20MAVY%20NEWS%20account">mavytechsolutions@gmail.com</a> ${T(ctx, 'కు ఈమెయిల్ పంపండి. 7 రోజుల్లో తొలగిస్తాం.', 'with the subject "Delete my MAVY NEWS account". We delete it within 7 days.')}</p>
+<h2>${T(ctx, 'ఏమి తొలగించబడుతుంది', 'What is deleted')}</h2>
+<ul><li>${T(ctx, 'మీ పేరు, మొబైల్ నంబర్, ఎంచుకున్న ప్రాంతాలు, అంశాలు, సేవ్ చేసిన వార్తలు, చదివిన చరిత్ర, లైక్‌లు.', 'Your name, mobile number, chosen places and topics, saved stories, reading history and likes.')}</li>
+<li>${T(ctx, 'జర్నలిస్ట్ దరఖాస్తు వివరాలు. (ఆధార్ ఫోటో నిర్ణయం వెంటనే తొలగించబడుతుంది.)', 'Your journalist application details. (The Aadhaar photo is already deleted as soon as the request is decided.)')}</li></ul>
+<h2>${T(ctx, 'ఏమి ఉంచుతాం', 'What we keep')}</h2>
+<p>${T(ctx, 'ప్రచురించిన వార్తలు ప్రజా రికార్డు కాబట్టి, రచయిత పేరు లేకుండా ఉంచవచ్చు. చట్టపరమైన అవసరాల కోసం భద్రతా లాగ్‌లు 180 రోజుల వరకు ఉంచుతాం.', 'Published news stories are a public record and may stay online without your name. Security logs are kept for up to 180 days for legal reasons.')}</p></div>`;
+    this.send(res, layout(ctx, { title: T(ctx, 'ఖాతా తొలగింపు — MAVY NEWS', 'Delete account — MAVY NEWS'), description: 'Delete your MAVY NEWS account', canonical: absolute('/delete-account'), body, side: await this.sideHtml(ctx) }), 200, 3600);
   }
 
   @Get('robots.txt')

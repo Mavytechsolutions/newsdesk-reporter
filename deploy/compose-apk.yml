@@ -9,6 +9,7 @@ services:
     volumes:
       - /var/lib/mavy-news/apk:/out
       - /var/lib/mavy-news/android-cache:/cache
+      - /var/lib/mavy-news/keys:/keys
     command: ["bash", "-c", "rm -rf /src && git clone -q --depth 1 -b mavy-news-app https://github.com/Mavytechsolutions/newsdesk-reporter /src && exec bash /src/deploy/build-apk.sh"]
   apk-web:
     image: nginx:alpine

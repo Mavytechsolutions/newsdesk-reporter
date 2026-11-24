@@ -20,6 +20,8 @@ export function configureApp(app: INestApplication) {
       { path: 'about', method: RequestMethod.GET },
       { path: 'grievance', method: RequestMethod.GET },
       { path: 'privacy', method: RequestMethod.GET },
+      { path: 'delete-account', method: RequestMethod.GET },
+      { path: 'release/:file', method: RequestMethod.GET },
       { path: 'site/:file', method: RequestMethod.GET },
       { path: 'robots.txt', method: RequestMethod.GET },
       { path: 'sitemap.xml', method: RequestMethod.GET },

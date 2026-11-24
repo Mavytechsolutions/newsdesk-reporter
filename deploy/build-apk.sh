@@ -49,10 +49,42 @@ NAME=$(basename "$DIST")
 sed -i "s#^distributionUrl=.*#distributionUrl=file\\:/cache/$NAME#" gradle/wrapper/gradle-wrapper.properties
 export JAVA_TOOL_OPTIONS="-Djava.net.preferIPv4Stack=true"
 printf '\norg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g\nreactNativeArchitectures=arm64-v8a,armeabi-v7a\norg.gradle.parallel=true\nsystemProp.org.gradle.internal.http.connectionTimeout=120000\nsystemProp.org.gradle.internal.http.socketTimeout=120000\nsystemProp.org.gradle.internal.repository.max.retries=8\n' >> gradle.properties
-echo "== compiling APK (longest step)"
-./gradlew assembleRelease --no-daemon --console=plain -q
+# ---- Play Store signing: upload key lives only on the VPS (/keys), never in GitHub ----
+mkdir -p /keys && chmod 700 /keys
+if [ ! -s /keys/upload.jks ]; then
+  echo "== creating the Play Store upload key (first time only)"
+  head -c 24 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' > /keys/upload.pass
+  keytool -genkeypair -keystore /keys/upload.jks -alias mavyupload -keyalg RSA -keysize 2048 -validity 10000 \
+    -storepass "$(cat /keys/upload.pass)" -keypass "$(cat /keys/upload.pass)" \
+    -dname "CN=MAVY TECH SOLUTIONS PVT LTD, O=MAVY TECH SOLUTIONS PVT LTD, L=Anantapur, ST=Andhra Pradesh, C=IN" >/dev/null
+  chmod 600 /keys/upload.jks /keys/upload.pass
+fi
+keytool -list -keystore /keys/upload.jks -storepass "$(cat /keys/upload.pass)" -alias mavyupload | grep -i "SHA-256\|SHA256" || true
+# every build gets a higher version number (Play requires it)
+VC=$(( $(date +%s) / 60 - 29900000 ))
+node - "$VC" <<'NODE'
+const fs = require('fs'); const vc = process.argv[2];
+const f = 'app/build.gradle'; let g = fs.readFileSync(f, 'utf8');
+g = g.replace(/versionCode \d+/, `versionCode ${vc}`).replace(/versionName "[^"]*"/, `versionName "1.0.${vc}"`);
+g = g.replace(/signingConfigs \{/, `signingConfigs {
+        upload {
+            storeFile file('/keys/upload.jks')
+            storePassword new File('/keys/upload.pass').text.trim()
+            keyAlias 'mavyupload'
+            keyPassword new File('/keys/upload.pass').text.trim()
+        }`);
+g = g.replace(/(release \{[\s\S]*?)signingConfig signingConfigs\.debug/, '$1signingConfig signingConfigs.upload');
+if (!g.includes('signingConfigs.upload')) { console.error('could not set release signing'); process.exit(1); }
+fs.writeFileSync(f, g);
+console.log('version', vc);
+NODE
+echo "== compiling APK + Play Store bundle (longest step)"
+./gradlew assembleRelease bundleRelease --no-daemon --console=plain -q
 
+mkdir -p "$OUT/release"
+cp app/build/outputs/bundle/release/app-release.aab "$OUT/release/mavy-news.aab"
+echo "$VC" > "$OUT/release/version.txt"
 cp app/build/outputs/apk/release/app-release.apk "$OUT/mavy-news.apk"
 SIZE=$(du -m "$OUT/mavy-news.apk" | cut -f1)
-page "<p>Version 1.0 · ${SIZE} MB · built $(date '+%d %b %Y %H:%M') UTC</p><p><a class=b href=\"mavy-news.apk\">⬇ Download MAVY NEWS app</a></p><p>After downloading, open the file and tap <b>Install</b>.<br>If Android asks, allow installing from this source.</p>"
+page "<p>Version 1.0.${VC} · ${SIZE} MB · built $(date '+%d %b %Y %H:%M') UTC</p><p><a class=b href=\"mavy-news.apk\">⬇ Download MAVY NEWS app</a></p><p>After downloading, open the file and tap <b>Install</b>.<br>If Android asks, allow installing from this source.</p>"
 echo "== APK READY: $SIZE MB"

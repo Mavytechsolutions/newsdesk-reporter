@@ -52,7 +52,8 @@
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "INTERNET"
-      ]
+      ],
+      "versionCode": 1
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -64,9 +65,7 @@
       [
         "expo-build-properties",
         {
-          "android": {
-            "usesCleartextTraffic": true
-          }
+          "android": {}
         }
       ],
       [

@@ -44,4 +44,5 @@ services:
       - OTP_FIXED_CODE=1234
     volumes:
       - /var/lib/mavy-news/media:/data/media
+      - /var/lib/mavy-news/apk:/data/apk:ro
     command: ["sh", "-c", "apk add --no-cache git >/dev/null && rm -rf /src && git clone -q --depth 1 -b mavy-news-app https://github.com/Mavytechsolutions/newsdesk-reporter /src && exec sh /src/deploy/api-run.sh"]
