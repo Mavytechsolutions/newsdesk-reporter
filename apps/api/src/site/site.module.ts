@@ -410,7 +410,8 @@ ${card.related?.length ? `<div class="sec-head"><h2>${T(ctx, 'ఇలాంటి
 <p>${T(ctx, 'ప్రతి వార్తను మా ఎడిటర్లు పరిశీలించిన తర్వాతే ప్రచురిస్తాం. సిటిజన్ జర్నలిస్టులు యాప్ ద్వారా వార్తలు పంపుతారు; ఆధార్‌తో ధృవీకరించిన తర్వాతే వారికి అనుమతి ఇస్తాం. ఇతర సంస్థల నుంచి తీసుకున్న సమాచారానికి మూలం పేరు స్పష్టంగా రాస్తాం.', 'Every story is checked by our editors before it is published. Citizen journalists send stories through the app and are verified before they can post. When information comes from another outlet, we name the source.')}</p>
 <h2>${T(ctx, 'తప్పు కనిపిస్తే', 'If something is wrong')}</h2>
 <p>${T(ctx, 'యాప్‌లో వార్త కింద "రిపోర్ట్" నొక్కండి, లేదా', 'Tap "Report" under the story in the app, or see')} <a href="/grievance">${T(ctx, 'ఫిర్యాదుల పేజీ', 'our grievance page')}</a>.</p>
-<p><small>MAVY TECH SOLUTIONS PVT LTD</small></p></div>`;
+<h2>${T(ctx, 'సంప్రదించండి', 'Contact us')}</h2>
+<p>MAVY TECH SOLUTIONS PVT LTD<br>${T(ctx, 'అనంతపురం, ఆంధ్రప్రదేశ్, భారతదేశం', 'Anantapur, Andhra Pradesh, India')}<br>${T(ctx, 'ఈమెయిల్', 'Email')}: <a href="mailto:mavytechsolutions@gmail.com">mavytechsolutions@gmail.com</a><br>${T(ctx, 'వెబ్‌సైట్', 'Website')}: <a href="https://www.mavynews.com">www.mavynews.com</a></p></div>`;
     this.send(res, layout(ctx, { title: T(ctx, 'మా గురించి — MAVY NEWS', 'About — MAVY NEWS'), description: 'About MAVY NEWS', canonical: absolute('/about'), body, side: await this.sideHtml(ctx) }), 200, 3600);
   }
 
