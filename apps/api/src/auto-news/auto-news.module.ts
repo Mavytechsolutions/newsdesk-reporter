@@ -2,7 +2,7 @@
  * Auto News — Step 1: settings and the list of sources (master admin only).
  *
  *   GET    /admin/auto-news                    settings + sources + whether the Claude key is set on the server
- *   PATCH  /admin/auto-news/settings           { enabled?, testMode?, intervalMinutes?, dailyCostLimitUsd? }
+ *   PATCH  /admin/auto-news/settings           { enabled?, testMode?, intervalMinutes?, dailyCostLimitInr? }
  *   POST   /admin/auto-news/sources            { name, url, kind, note?, photosAllowed? }
  *   PATCH  /admin/auto-news/sources/:id        { name?, enabled?, autoPublish?, photosAllowed?, note? }
  *   DELETE /admin/auto-news/sources/:id
@@ -62,7 +62,7 @@ class SettingsDto {
   @IsOptional() @IsBoolean() enabled?: boolean;
   @IsOptional() @IsBoolean() testMode?: boolean;
   @IsOptional() @Type(() => Number) @IsInt() @IsIn([15, 30, 60, 120, 180, 360], { message: 'Choose 15, 30, 60, 120, 180 or 360 minutes' }) intervalMinutes?: number;
-  @IsOptional() @Type(() => Number) @IsNumber({ maxDecimalPlaces: 2 }) @Min(0) @Max(100) dailyCostLimitUsd?: number;
+  @IsOptional() @Type(() => Number) @IsInt({ message: 'Daily limit must be whole rupees' }) @Min(0) @Max(10000) dailyCostLimitInr?: number;
 }
 class NewSourceDto {
   @IsString() @MinLength(3) @MaxLength(120) name: string;
@@ -104,7 +104,7 @@ export class AutoNewsService {
   view(s: Awaited<ReturnType<AutoNewsService['settings']>>) {
     return {
       enabled: s.enabled, testMode: s.testMode, intervalMinutes: s.intervalMinutes,
-      dailyCostLimitUsd: s.dailyCostLimitCents / 100, updatedAt: s.updatedAt,
+      dailyCostLimitInr: s.dailyCostLimitInr, updatedAt: s.updatedAt,
     };
   }
   sourceView(r: SourceRow) {
@@ -150,7 +150,7 @@ export class AutoNewsService {
     if (dto.enabled !== undefined) patch.enabled = dto.enabled;
     if (dto.testMode !== undefined) patch.testMode = dto.testMode;
     if (dto.intervalMinutes !== undefined) patch.intervalMinutes = dto.intervalMinutes;
-    if (dto.dailyCostLimitUsd !== undefined) patch.dailyCostLimitCents = Math.round(dto.dailyCostLimitUsd * 100);
+    if (dto.dailyCostLimitInr !== undefined) patch.dailyCostLimitInr = dto.dailyCostLimitInr;
     const [row] = await this.db.update(autoNewsSettings).set(patch).where(eq(autoNewsSettings.id, 1)).returning();
     await this.audit.log({
       actorId: user.id, action: 'auto_news.settings', entity: 'auto_news_settings', entityId: '1', ip,

@@ -342,7 +342,10 @@ export const autoNewsSettings = pgTable('auto_news_settings', {
   enabled: boolean('enabled').notNull().default(false),
   testMode: boolean('test_mode').notNull().default(true),
   intervalMinutes: integer('interval_minutes').notNull().default(30),
+  /** Old US-cents limit, no longer used (kept so old data stays valid). */
   dailyCostLimitCents: integer('daily_cost_limit_cents').notNull().default(150),
+  /** Daily Claude spending limit in rupees. When today's estimated cost reaches it, Auto News stops until midnight (India time). */
+  dailyCostLimitInr: integer('daily_cost_limit_inr').notNull().default(100),
   updatedBy: uuid('updated_by').references(() => users.id),
   updatedAt: ts('updated_at').notNull().defaultNow(),
 });

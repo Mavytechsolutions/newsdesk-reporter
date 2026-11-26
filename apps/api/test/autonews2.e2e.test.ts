@@ -49,7 +49,9 @@ function pages(): Record<string, string> {
     '/alerts.xml': rss(
       `<item><guid>c1</guid><title>పిడుగులు</title><link>${base}/cap/c1</link><author>controlroom@ndma.gov.in (Andhra Pradesh SDMA)</author><pubDate>${now.toUTCString()}</pubDate></item>`
       + `<item><guid>c2</guid><title>മിന്നൽ</title><link>${base}/cap/c2</link><author>controlroom@ndma.gov.in (IMD Thiruvananthapuram)</author><pubDate>${now.toUTCString()}</pubDate></item>`
-      + `<item><guid>c3</guid><title>పిడుగులు</title><link>${base}/cap/c3</link><author>controlroom@ndma.gov.in (Andhra Pradesh SDMA)</author><pubDate>${now.toUTCString()}</pubDate></item>`),
+      + `<item><guid>c3</guid><title>పిడుగులు</title><link>${base}/cap/c3</link><author>controlroom@ndma.gov.in (Andhra Pradesh SDMA)</author><pubDate>${now.toUTCString()}</pubDate></item>`
+      + `<item><guid>c4</guid><title>పిడుగులు</title><link>${base}/cap/missing</link><author>controlroom@ndma.gov.in (Andhra Pradesh SDMA)</author><pubDate>${now.toUTCString()}</pubDate></item>`
+      + `<item><guid>c5</guid><title>పిడుగులు</title><link>${base}/cap/c1</link><author>controlroom@ndma.gov.in (Andhra Pradesh SDMA)</author><pubDate>${new Date(Date.now() - 30 * 3600_000).toUTCString()}</pubDate></item>`),
     '/cap/c1': cap('atp-Gooty Mandal', later),
     '/cap/c2': cap('Kochi', later),
     '/cap/c3': cap('atp-Tadipatri Mandal', before),
@@ -140,10 +142,13 @@ describe('Collecting', () => {
     const t = (await items('?status=TIP'))[0];
     expect(t).toMatchObject({ title: 'Big story on another channel', summary: null });
   });
-  it('official alerts: only AP/Telangana, not expired, with area and Telugu headline', async () => {
+  it('official alerts: only AP/Telangana, not expired, only with their details (place, expiry), with Telugu headline', async () => {
     const id = await addSource('Test alerts', '/alerts.xml', 'OFFICIAL_ALERT');
     const r = await api.post(v1('/admin/auto-news/check-now')).set(as()).send({ sourceId: id }).expect(200);
-    expect(r.body.results[0]).toMatchObject({ found: 3, added: 1, skipped: 2 });
+    expect(r.body.results[0]).toMatchObject({ found: 5, added: 1, skipped: 4 });
+    // an alert whose details cannot be read (no place, no expiry) is not saved — it is tried again next time
+    const { rows } = await pool.query("select count(*)::int n from auto_news_items where external_id in ('c4','c5')");
+    expect(rows[0].n).toBe(0);
     const a = (await items()).find((x) => x.alert);
     expect(a).toMatchObject({ title: 'Lightning is likely over atp-Gooty Mandal.', area: 'atp-Gooty Mandal' });
     expect(a.alert).toMatchObject({ event: 'Lightning', severity: 'Severe', headlineTe: 'పిడుగులు పడే అవకాశం' });

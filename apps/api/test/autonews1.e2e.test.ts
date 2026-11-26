@@ -43,9 +43,9 @@ beforeAll(async () => {
 afterAll(async () => { await app?.close(); await pool?.end(); });
 
 describe('Auto News settings', () => {
-  it('starts OFF, in test mode, every 30 minutes, $1.50 a day; NDMA alerts on, AP I&PR and PIB listed but off', async () => {
+  it('starts OFF, in test mode, every 30 minutes, ₹100 a day; NDMA alerts on, AP I&PR and PIB listed but off', async () => {
     const r = await http.get(api('/admin/auto-news')).set(as(admin)).expect(200);
-    expect(r.body.settings).toMatchObject({ enabled: false, testMode: true, intervalMinutes: 30, dailyCostLimitUsd: 1.5 });
+    expect(r.body.settings).toMatchObject({ enabled: false, testMode: true, intervalMinutes: 30, dailyCostLimitInr: 100 });
     expect(r.body.keyConfigured).toBe(false);
     expect(r.body.sources).toHaveLength(3);
     expect(r.body.sources[0]).toMatchObject({ kind: 'PRESS_RELEASE', enabled: false, autoPublish: false, isGovernment: true });
@@ -60,11 +60,12 @@ describe('Auto News settings', () => {
   });
   it('saves ON/OFF, test mode, interval and daily cost limit; refuses odd values', async () => {
     const r = await http.patch(api('/admin/auto-news/settings')).set(as(admin))
-      .send({ enabled: true, intervalMinutes: 60, dailyCostLimitUsd: 2.25 }).expect(200);
-    expect(r.body).toMatchObject({ enabled: true, testMode: true, intervalMinutes: 60, dailyCostLimitUsd: 2.25 });
+      .send({ enabled: true, intervalMinutes: 60, dailyCostLimitInr: 150 }).expect(200);
+    expect(r.body).toMatchObject({ enabled: true, testMode: true, intervalMinutes: 60, dailyCostLimitInr: 150 });
     await http.patch(api('/admin/auto-news/settings')).set(as(admin)).send({ intervalMinutes: 7 }).expect(400);
-    await http.patch(api('/admin/auto-news/settings')).set(as(admin)).send({ dailyCostLimitUsd: -1 }).expect(400);
-    await http.patch(api('/admin/auto-news/settings')).set(as(admin)).send({ dailyCostLimitUsd: 500 }).expect(400);
+    await http.patch(api('/admin/auto-news/settings')).set(as(admin)).send({ dailyCostLimitInr: -1 }).expect(400);
+    await http.patch(api('/admin/auto-news/settings')).set(as(admin)).send({ dailyCostLimitInr: 50000 }).expect(400);
+    await http.patch(api('/admin/auto-news/settings')).set(as(admin)).send({ dailyCostLimitInr: 99.5 }).expect(400);
     const audit = await pool.query("select count(*)::int n from audit_logs where action = 'auto_news.settings'");
     expect(audit.rows[0].n).toBe(1);
   });

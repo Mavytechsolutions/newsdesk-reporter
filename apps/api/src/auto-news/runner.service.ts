@@ -12,7 +12,7 @@ import {
 
 type Source = typeof autoNewsSources.$inferSelect;
 const MAX_NEW_PER_SOURCE = 60;
-const MAX_ALERT_DETAILS_PER_RUN = 40;
+const MAX_ALERT_DETAILS_PER_RUN = 150;
 const LOCK_KEY = 74_610_001;
 
 export interface RunSummary { sourceId: string; sourceName: string; found: number; added: number; duplicates: number; skipped: number; error: string | null }
@@ -94,6 +94,7 @@ export class AutoNewsRunner implements OnModuleInit, OnModuleDestroy {
         let language: string | null = /[ఀ-౿]/.test(it.title) ? 'te' : 'en';
         if (src.kind === 'OFFICIAL_ALERT') {
           if (!isOurRegion(it.author, it.title, it.summary)) { sum.skipped++; continue; }
+          if (it.published && it.published.getTime() < Date.now() - 24 * 3600_000) { sum.skipped++; continue; } // alerts older than a day have expired
           if (alertFetches < MAX_ALERT_DETAILS_PER_RUN) {
             alertFetches++;
             try {
@@ -102,12 +103,12 @@ export class AutoNewsRunner implements OnModuleInit, OnModuleDestroy {
               if (capRes.status < 400) details = parseCap(capRes.text);
             } catch { /* details are optional */ }
           }
-          if (details) {
-            if (details.expires && new Date(details.expires).getTime() < Date.now()) { sum.skipped++; continue; }
-            title = details.headlineEn || title;
-            area = details.area;
-            language = 'en';
-          }
+          // Without the alert's details we don't know the place or the expiry time: don't save it now, try again next check.
+          if (!details) { sum.skipped++; continue; }
+          if (!details.expires || new Date(details.expires).getTime() < Date.now()) { sum.skipped++; continue; }
+          title = details.headlineEn || title;
+          area = details.area;
+          language = 'en';
         }
 
         const tip = src.kind === 'TIP_ONLY';

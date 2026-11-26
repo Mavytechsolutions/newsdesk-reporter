@@ -334,7 +334,7 @@
     call('GET', '/admin/auto-news').then(function (r) {
       var s = r.settings;
       $('anEnabled').checked = s.enabled; $('anTest').checked = s.testMode;
-      $('anInterval').value = String(s.intervalMinutes); $('anLimit').value = s.dailyCostLimitUsd.toFixed(2);
+      $('anInterval').value = String(s.intervalMinutes); $('anLimit').value = String(s.dailyCostLimitInr);
       var key = $('anKey'); key.innerHTML = '';
       key.appendChild(h('div', { class: 'msg ' + (r.keyConfigured ? 'ok' : 'err'), text: r.keyConfigured
         ? '🔑 Claude API కీ సర్వర్‌లో ఉంది (Claude API key is set on the server — it is never shown here).'
@@ -410,11 +410,11 @@
     });
   }
   $('anSave').addEventListener('click', function () {
-    var limit = Number(String($('anLimit').value).replace(',', '.'));
-    if (!(limit >= 0 && limit <= 100)) { msg('anMsg', 'ఖర్చు పరిమితి 0 నుంచి 100 డాలర్ల మధ్య ఉండాలి (Limit must be between 0 and 100 dollars)'); return; }
+    var limit = Number(String($('anLimit').value).replace(/[₹,\s]/g, ''));
+    if (!(limit >= 0 && limit <= 10000 && Math.floor(limit) === limit)) { msg('anMsg', 'ఖర్చు పరిమితి 0 నుంచి 10,000 రూపాయల మధ్య, పూర్తి సంఖ్య ఉండాలి (Limit must be whole rupees, 0 to 10,000)'); return; }
     if ($('anEnabled').checked && !$('anTest').checked && !confirm('టెస్ట్ మోడ్ ఆఫ్ — ఆమోదించిన వార్తలు అందరికీ కనిపిస్తాయి. సరేనా?\n(Test mode OFF — approved posts will be visible to everyone. Continue?)')) return;
     $('anSave').disabled = true;
-    call('PATCH', '/admin/auto-news/settings', { enabled: $('anEnabled').checked, testMode: $('anTest').checked, intervalMinutes: Number($('anInterval').value), dailyCostLimitUsd: Math.round(limit * 100) / 100 })
+    call('PATCH', '/admin/auto-news/settings', { enabled: $('anEnabled').checked, testMode: $('anTest').checked, intervalMinutes: Number($('anInterval').value), dailyCostLimitInr: limit })
       .then(function () { msg('anMsg', '✔ సెట్టింగ్స్ సేవ్ అయ్యాయి (Settings saved)', true); loadAuto(); })
       .catch(function (e) { msg('anMsg', e.message); })
       .then(function () { $('anSave').disabled = false; });
