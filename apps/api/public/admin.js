@@ -23,16 +23,16 @@
   function ago(iso) {
     if (!iso) return '';
     var m = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
-    if (m < 1) return 'ఇప్పుడే'; if (m < 60) return m + ' ని. క్రితం';
-    var hr = Math.round(m / 60); if (hr < 24) return hr + ' గం. క్రితం';
-    return new Date(iso).toLocaleString('te-IN', { dateStyle: 'medium', timeStyle: 'short' });
+    if (m < 1) return 'just now'; if (m < 60) return m + ' min ago';
+    var hr = Math.round(m / 60); if (hr < 24) return hr + (hr === 1 ? ' hour ago' : ' hours ago');
+    return new Date(iso).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
   }
-  var STATUS = { DRAFT: 'డ్రాఫ్ట్', SUBMITTED: 'సమీక్షకు', IN_REVIEW: 'సమీక్షలో', CHANGES_REQUESTED: 'మార్పులు కావాలి', APPROVED: 'ఆమోదం', SCHEDULED: 'షెడ్యూల్', PUBLISHED: 'ప్రచురితం', REJECTED: 'తిరస్కరణ', ARCHIVED: 'తీసివేశారు' };
-  var LEVEL = { JUNIOR: 'జూనియర్ జర్నలిస్ట్', JOURNALIST: 'జర్నలిస్ట్', SENIOR: '⭐ సీనియర్ జర్నలిస్ట్' };
-  var ROLE = { SUPER_ADMIN: 'సూపర్ అడ్మిన్', MANAGING_EDITOR: 'మేనేజింగ్ ఎడిటర్', DISTRICT_EDITOR: 'సబ్-అడ్మిన్', SUB_EDITOR: 'సబ్ ఎడిటర్', REPORTER: 'రిపోర్టర్', VIDEO_JOURNALIST: 'వీడియో జర్నలిస్ట్', MARKETING_MANAGER: 'మార్కెటింగ్' };
+  var STATUS = { DRAFT: 'Draft', SUBMITTED: 'Waiting', IN_REVIEW: 'In review', CHANGES_REQUESTED: 'Changes requested', APPROVED: 'Approved', SCHEDULED: 'Scheduled', PUBLISHED: 'Published', REJECTED: 'Rejected', ARCHIVED: 'Taken down' };
+  var LEVEL = { JUNIOR: 'Junior Journalist', JOURNALIST: 'Journalist', SENIOR: '⭐ Senior Journalist' };
+  var ROLE = { SUPER_ADMIN: 'Super Admin', MANAGING_EDITOR: 'Managing Editor', DISTRICT_EDITOR: 'Sub-admin', SUB_EDITOR: 'Sub-editor', REPORTER: 'Reporter', VIDEO_JOURNALIST: 'Video journalist', MARKETING_MANAGER: 'Marketing' };
   function lvl(level) { return level ? h('span', { class: 'lvl ' + level, text: LEVEL[level] }) : null; }
   function tel(phone) { return phone ? h('a', { class: 'tel', href: 'tel:' + phone, text: '📞 ' + phone.replace(/^\+91/, '') }) : null; }
-  function placeName(p) { return p ? (p.nameTe + ' (' + p.nameEn + ')') : ''; }
+  function placeName(p) { return p ? p.nameEn : ''; }
   function ask(question) { var a = prompt(question); return a && a.trim() ? a.trim() : null; }
 
   // ---------- API with automatic token refresh (same login as the newsroom page) ----------
@@ -45,7 +45,7 @@
       .then(function (r) { if (!r.ok) throw new Error('expired'); return r.json(); })
       .then(function (n) { saveTokens({ accessToken: n.accessToken, refreshToken: n.refreshToken, name: t.name, role: t.role }); });
   }
-  function expired() { saveTokens(null); start(); return new Error('సెషన్ ముగిసింది. మళ్లీ లాగిన్ అవ్వండి.'); }
+  function expired() { saveTokens(null); start(); return new Error('Your session has ended. Please log in again.'); }
   function raw(method, path, body, retried) {
     var t = tokens();
     var opts = { method: method, headers: {} };
@@ -54,7 +54,7 @@
     return fetch(API + path, opts).then(function (res) {
       if (res.status === 401 && t && !retried) return refresh().then(function () { return raw(method, path, body, true); }, function () { throw expired(); });
       return res;
-    }, function () { throw new Error('ఇంటర్నెట్ / సర్వర్ అందుబాటులో లేదు (No connection)'); });
+    }, function () { throw new Error('No connection'); });
   }
   function call(method, path, body) {
     return raw(method, path, body).then(function (res) {
@@ -117,10 +117,10 @@
   }
   function loadReview() {
     var box = $('rList'); box.innerHTML = '';
-    msg('rMsg', 'లోడ్ అవుతోంది…', true);
+    msg('rMsg', 'Loading…', true);
     var src = $('rSource').value;
     call('GET', '/newsroom/articles?limit=50&statuses=' + $('rStatus').value + (src ? '&source=' + src : '')).then(function (r) {
-      msg('rMsg', r.total ? '' : '✔ ఇక్కడ వార్తలు ఏవీ లేవు (Nothing here)', true);
+      msg('rMsg', r.total ? '' : '✔ Nothing here', true);
       r.items.forEach(function (a) { box.appendChild(storyCard(a)); });
     }).catch(function (e) { msg('rMsg', e.message); });
   }
@@ -131,40 +131,40 @@
     var done = function (text) { return function () { msg('rMsg', text, true); loadReview(); counts(); }; };
     var fail = function (e) { msg('rMsg', e.message); window.scrollTo(0, 0); };
     if (['SUBMITTED', 'IN_REVIEW', 'APPROVED'].indexOf(a.status) >= 0) {
-      actions.appendChild(h('button', { class: 'btn small', type: 'button', text: '✔ ఆమోదించి ప్రచురించు (Approve & publish)', onclick: function (ev) {
+      actions.appendChild(h('button', { class: 'btn small', type: 'button', text: '✔ Approve & publish', onclick: function (ev) {
         ev.target.disabled = true;
-        approveAndPublish(a).then(done('✔ ప్రచురించబడింది. జర్నలిస్ట్‌కు పాయింట్లు జమ అయ్యాయి. (Published, points added)'), fail).then(function () { ev.target.disabled = false; });
+        approveAndPublish(a).then(done('✔ Published, points added'), fail).then(function () { ev.target.disabled = false; });
       } }));
-      actions.appendChild(h('button', { class: 'btn out small', type: 'button', text: '↩ మార్పులు కోరండి (Send back)', onclick: function () {
-        var note = ask('ఏమి మార్చాలి? జర్నలిస్ట్‌కు యాప్‌లో కనిపిస్తుంది (What should they fix?)'); if (!note) return;
-        transition(a.id, 'request_changes', note).then(done('✔ జర్నలిస్ట్‌కు తిరిగి పంపబడింది (Sent back)'), fail);
+      actions.appendChild(h('button', { class: 'btn out small', type: 'button', text: '↩ Send back', onclick: function () {
+        var note = ask('What should they fix?'); if (!note) return;
+        transition(a.id, 'request_changes', note).then(done('✔ Sent back'), fail);
       } }));
-      if (a.status !== 'APPROVED') actions.appendChild(h('button', { class: 'btn red small', type: 'button', text: '✖ తిరస్కరించు (Reject)', onclick: function () {
-        var note = ask('ఎందుకు తిరస్కరిస్తున్నారు? (Reason)'); if (!note) return;
-        (a.status === 'SUBMITTED' ? transition(a.id, 'start_review') : Promise.resolve()).then(function () { return transition(a.id, 'reject', note); }).then(done('✔ తిరస్కరించబడింది (Rejected)'), fail);
+      if (a.status !== 'APPROVED') actions.appendChild(h('button', { class: 'btn red small', type: 'button', text: '✖ Reject', onclick: function () {
+        var note = ask('Reason'); if (!note) return;
+        (a.status === 'SUBMITTED' ? transition(a.id, 'start_review') : Promise.resolve()).then(function () { return transition(a.id, 'reject', note); }).then(done('✔ Rejected'), fail);
       } }));
     }
     if (a.status === 'PUBLISHED') {
-      actions.appendChild(h('a', { class: 'btn out small', href: '/n/' + a.slug, target: '_blank', rel: 'noopener', text: '👁 చూడు (View)' }));
-      if (state.me.role !== 'DISTRICT_EDITOR') actions.appendChild(h('button', { class: 'btn red small', type: 'button', text: 'తీసివేయి (Take down)', onclick: function () {
-        var why = ask('ఈ వార్తను ఎందుకు తీసివేస్తున్నారు? జర్నలిస్ట్ పాయింట్లు వెనక్కి తీసుకోబడతాయి. (Reason — the journalist loses this story\'s points)'); if (!why) return;
-        transition(a.id, 'archive', why).then(done('✔ తీసివేయబడింది (Taken down)'), fail);
+      actions.appendChild(h('a', { class: 'btn out small', href: '/n/' + a.slug, target: '_blank', rel: 'noopener', text: '👁 View' }));
+      if (state.me.role !== 'DISTRICT_EDITOR') actions.appendChild(h('button', { class: 'btn red small', type: 'button', text: 'Take down', onclick: function () {
+        var why = ask('Reason for taking it down? (The journalist loses this story\'s points.)'); if (!why) return;
+        transition(a.id, 'archive', why).then(done('✔ Taken down'), fail);
       } }));
     }
     var live = a.status === 'PUBLISHED' || a.status === 'SCHEDULED';
     if (state.me.role !== 'DISTRICT_EDITOR' || !live)
-      actions.appendChild(h('button', { class: 'btn red small', type: 'button', text: '🗑 శాశ్వతంగా తొలగించు (Delete)', onclick: function () {
+      actions.appendChild(h('button', { class: 'btn red small', type: 'button', text: '🗑 Delete', onclick: function () {
         var t2 = (a.translations[0] || {}).headline || '';
-        if (!confirm('ఈ వార్తను శాశ్వతంగా తొలగించాలా? తిరిగి తీసుకురాలేము.\n(Delete this story for good? This cannot be undone.)\n\n' + t2)) return;
-        var why = live ? ask('ఎందుకు తొలగిస్తున్నారు? (Reason)') : '';
+        if (!confirm('Delete this story for good? This cannot be undone.\n\n' + t2)) return;
+        var why = live ? ask('Reason') : '';
         if (live && !why) return;
         call('DELETE', '/newsroom/articles/' + a.id + (why ? '?reason=' + encodeURIComponent(why) : ''))
-          .then(done('✔ తొలగించబడింది (Deleted)'), fail);
+          .then(done('✔ Deleted'), fail);
       } }));
-    var places = (a.locations || []).map(function (l) { return l.location.nameTe; }).join(', ');
+    var places = (a.locations || []).map(function (l) { return l.location.nameEn; }).join(', ');
     return h('div', { class: 'story' },
       h('div', { class: 'meta' }, h('span', { class: 'badge ' + a.status, text: STATUS[a.status] || a.status }),
-        (a.category ? a.category.nameTe : '') + (places ? ' · 📍 ' + places : '') + ' · ' + ago(a.updatedAt)),
+        (a.category ? a.category.nameEn : '') + (places ? ' · 📍 ' + places : '') + ' · ' + ago(a.updatedAt)),
       h('h3', { text: (a.isBreaking ? '🔴 ' : '') + (t.headline || '') }),
       a.heroImageUrl ? h('img', { class: 'hero', src: a.heroImageUrl, alt: '' }) : null,
       h('p', { text: t.body || t.summary || '' }),
@@ -178,10 +178,10 @@
   // ---------- 2. journalist requests ----------
   function loadApps() {
     var box = $('aList'); box.innerHTML = '';
-    msg('aMsg', 'లోడ్ అవుతోంది…', true);
+    msg('aMsg', 'Loading…', true);
     var st = $('aStatus').value;
     call('GET', '/admin/journalist-applications?status=' + st).then(function (list) {
-      msg('aMsg', list.length ? '' : '✔ దరఖాస్తులు ఏవీ లేవు (No requests)', true);
+      msg('aMsg', list.length ? '' : '✔ No requests', true);
       list.forEach(function (x) { box.appendChild(appCard(x)); });
     }).catch(function (e) { msg('aMsg', e.message); });
   }
@@ -191,30 +191,30 @@
     var done = function (text) { return function () { msg('aMsg', text, true); loadApps(); counts(); window.scrollTo(0, 0); }; };
     var fail = function (e) { msg('aMsg', e.message); window.scrollTo(0, 0); };
     if (x.status === 'PENDING') {
-      if (x.hasAadhaar) actions.appendChild(h('button', { class: 'btn out small', type: 'button', text: '🪪 ఆధార్ చూడండి (View Aadhaar)', onclick: function (ev) {
+      if (x.hasAadhaar) actions.appendChild(h('button', { class: 'btn out small', type: 'button', text: '🪪 View Aadhaar', onclick: function (ev) {
         ev.target.disabled = true;
         raw('GET', '/admin/journalist-applications/' + x.id + '/aadhaar').then(function (res) {
-          if (!res.ok) throw new Error('ఆధార్ ఫోటో అందుబాటులో లేదు (' + res.status + ')');
+          if (!res.ok) throw new Error('Aadhaar photo not available (' + res.status + ')');
           return res.blob();
         }).then(function (b) {
           var u = URL.createObjectURL(b); state.objectUrls.push(u);
           imgBox.innerHTML = ''; imgBox.appendChild(h('img', { class: 'aadhaar', src: u, alt: 'Aadhaar' }));
         }).catch(fail).then(function () { ev.target.disabled = false; });
       } }));
-      actions.appendChild(h('button', { class: 'btn small', type: 'button', text: '✔ ఆమోదించు (Approve)', onclick: function () {
-        if (!confirm(x.name + ' ను జూనియర్ జర్నలిస్ట్‌గా ఆమోదించాలా? (Approve as Junior Journalist?)')) return;
-        call('POST', '/admin/journalist-applications/' + x.id + '/decision', { decision: 'approve' }).then(done('✔ ' + x.name + ' ఇప్పుడు జూనియర్ జర్నలిస్ట్. యాప్ నుంచి వార్తలు పంపగలరు.'), fail);
+      actions.appendChild(h('button', { class: 'btn small', type: 'button', text: '✔ Approve', onclick: function () {
+        if (!confirm('Approve ' + x.name + ' as a Junior Journalist?')) return;
+        call('POST', '/admin/journalist-applications/' + x.id + '/decision', { decision: 'approve' }).then(done('✔ ' + x.name + ' is now a Junior Journalist and can send stories from the app.'), fail);
       } }));
-      actions.appendChild(h('button', { class: 'btn red small', type: 'button', text: '✖ తిరస్కరించు (Reject)', onclick: function () {
-        var note = ask('కారణం రాయండి — వ్యక్తికి యాప్‌లో కనిపిస్తుంది (Reason, shown to the person)'); if (!note) return;
-        call('POST', '/admin/journalist-applications/' + x.id + '/decision', { decision: 'reject', note: note }).then(done('✔ తిరస్కరించబడింది (Rejected)'), fail);
+      actions.appendChild(h('button', { class: 'btn red small', type: 'button', text: '✖ Reject', onclick: function () {
+        var note = ask('Reason, shown to the person'); if (!note) return;
+        call('POST', '/admin/journalist-applications/' + x.id + '/decision', { decision: 'reject', note: note }).then(done('✔ Rejected'), fail);
       } }));
     }
     return h('div', { class: 'story' },
-      h('div', { class: 'meta' }, ago(x.createdAt) + (x.reviewedAt ? ' · నిర్ణయం: ' + ago(x.reviewedAt) : '')),
+      h('div', { class: 'meta' }, ago(x.createdAt) + (x.reviewedAt ? ' · decided ' + ago(x.reviewedAt) : '')),
       h('h3', { text: x.name }),
       h('div', {}, '📍 ' + placeName(x.place), '  ', tel(x.phone)),
-      x.note ? h('p', { class: 'help', text: 'గమనిక (Note): ' + x.note }) : null,
+      x.note ? h('p', { class: 'help', text: 'Note: ' + x.note }) : null,
       imgBox, actions);
   }
   $('aStatus').addEventListener('change', loadApps);
@@ -223,21 +223,21 @@
   // ---------- 3. journalists ----------
   function loadPeople() {
     var box = $('pList'); box.innerHTML = '';
-    msg('pMsg', 'లోడ్ అవుతోంది…', true);
+    msg('pMsg', 'Loading…', true);
     call('GET', '/admin/journalists').then(function (list) {
-      msg('pMsg', list.length ? '' : 'ఇంకా జర్నలిస్టులు లేరు (No journalists yet)', true);
+      msg('pMsg', list.length ? '' : 'No journalists yet', true);
       list.forEach(function (j, i) {
         var act = j.suspendedAt
-          ? h('button', { class: 'btn small', type: 'button', text: 'మళ్లీ అనుమతించు (Reactivate)', onclick: function () {
+          ? h('button', { class: 'btn small', type: 'button', text: 'Reactivate', onclick: function () {
             call('PATCH', '/admin/journalists/' + j.id, { action: 'reactivate' }).then(loadPeople, function (e) { msg('pMsg', e.message); });
           } })
-          : h('button', { class: 'btn out small', type: 'button', text: '⏸ నిలిపివేయి (Suspend)', onclick: function () {
-            var why = ask('ఎందుకు నిలిపివేస్తున్నారు? (Reason)'); if (!why) return;
+          : h('button', { class: 'btn out small', type: 'button', text: '⏸ Suspend', onclick: function () {
+            var why = ask('Reason'); if (!why) return;
             call('PATCH', '/admin/journalists/' + j.id, { action: 'suspend', reason: why }).then(loadPeople, function (e) { msg('pMsg', e.message); });
           } });
         box.appendChild(h('div', { class: 'person' },
-          h('div', {}, h('b', { text: (i + 1) + '. ' + (j.name || '—') }), lvl(j.level), j.suspendedAt ? h('span', { class: 'badge REJECTED', text: 'నిలిపివేశారు' }) : null,
-            h('div', { class: 'meta' }, '📍 ' + placeName(j.place) + ' · ' + j.approvedPosts + ' వార్తలు · ', h('b', { text: j.points + ' పాయింట్లు' }), ' ', tel(j.phone))),
+          h('div', {}, h('b', { text: (i + 1) + '. ' + (j.name || '—') }), lvl(j.level), j.suspendedAt ? h('span', { class: 'badge REJECTED', text: 'Suspended' }) : null,
+            h('div', { class: 'meta' }, '📍 ' + placeName(j.place) + ' · ' + j.approvedPosts + ' stories · ', h('b', { text: j.points + ' points' }), ' ', tel(j.phone))),
           act));
       });
     }).catch(function (e) { msg('pMsg', e.message); });
@@ -247,18 +247,18 @@
   function fillSelect(sel, items, first) {
     sel.innerHTML = '';
     if (first) sel.appendChild(h('option', { value: '', text: first }));
-    items.forEach(function (x) { sel.appendChild(h('option', { value: x.id, text: x.nameTe + ' (' + x.nameEn + ')' })); });
+    items.forEach(function (x) { sel.appendChild(h('option', { value: x.id, text: x.nameEn })); });
   }
   function loadDistricts() {
     return call('GET', '/locations?parentId=' + $('sState').value).then(function (ds) {
-      fillSelect($('sDistrict'), ds, '— జిల్లా ఎంచుకోండి —'); fillSelect($('sMandal'), [], '— మొత్తం జిల్లా (Whole district) —');
+      fillSelect($('sDistrict'), ds, '— Choose district —'); fillSelect($('sMandal'), [], '— Whole district —');
     });
   }
   $('sState').addEventListener('change', loadDistricts);
   $('sDistrict').addEventListener('change', function () {
-    if (!$('sDistrict').value) return fillSelect($('sMandal'), [], '— మొత్తం జిల్లా (Whole district) —');
+    if (!$('sDistrict').value) return fillSelect($('sMandal'), [], '— Whole district —');
     call('GET', '/locations?parentId=' + $('sDistrict').value).then(function (list) {
-      fillSelect($('sMandal'), list.filter(function (x) { return x.type === 'MANDAL' || x.type === 'MUNICIPALITY'; }), '— మొత్తం జిల్లా (Whole district) —');
+      fillSelect($('sMandal'), list.filter(function (x) { return x.type === 'MANDAL' || x.type === 'MUNICIPALITY'; }), '— Whole district —');
     });
   });
   $('genPass').addEventListener('click', function () {
@@ -269,12 +269,12 @@
   $('subForm').addEventListener('submit', function (e) {
     e.preventDefault(); msg('sMsg', '');
     var loc = $('sMandal').value || $('sDistrict').value;
-    if (!loc) return msg('sMsg', 'జిల్లా ఎంచుకోండి (Choose a district)');
+    if (!loc) return msg('sMsg', 'Choose a district');
     var area = ($('sMandal').value ? $('sMandal') : $('sDistrict')).selectedOptions[0].textContent;
     var body = { name: $('sName').value.trim(), email: $('sEmail').value.trim(), password: $('sPass').value, role: 'DISTRICT_EDITOR', designation: 'Sub-admin · ' + area, locationIds: [loc] };
     if ($('sPhone').value.trim()) body.phone = $('sPhone').value.trim();
     call('POST', '/admin/staff', body).then(function () {
-      msg('sMsg', '✔ సృష్టించబడింది. ఈ వివరాలు వారికి ఇవ్వండి — Login: ' + location.origin + '/admin · ' + body.email + ' · ' + body.password, true);
+      msg('sMsg', '✔ Created. Give them these login details — Login: ' + location.origin + '/admin · ' + body.email + ' · ' + body.password, true);
       $('sName').value = ''; $('sEmail').value = ''; $('sPhone').value = ''; $('sPass').value = '';
       loadSubList();
     }).catch(function (err) { msg('sMsg', err.message); });
@@ -291,15 +291,15 @@
       list.forEach(function (s) {
         var u = s.user; var off = s.suspendedAt || s.revokedAt;
         var act = u.id === (state.me && state.me.userId) ? null : off
-          ? h('button', { class: 'btn small', type: 'button', text: 'మళ్లీ అనుమతించు', onclick: function () { call('PATCH', '/admin/staff/' + u.id, { action: 'reactivate' }).then(loadSubList, function (e) { msg('subMsg', e.message); }); } })
+          ? h('button', { class: 'btn small', type: 'button', text: 'Reactivate', onclick: function () { call('PATCH', '/admin/staff/' + u.id, { action: 'reactivate' }).then(loadSubList, function (e) { msg('subMsg', e.message); }); } })
           : u.role === 'SUPER_ADMIN' ? null
-          : h('button', { class: 'btn out small', type: 'button', text: '⏸ నిలిపివేయి', onclick: function () {
-            var why = ask('ఎందుకు? (Reason)'); if (!why) return;
+          : h('button', { class: 'btn out small', type: 'button', text: '⏸ Suspend', onclick: function () {
+            var why = ask('Reason'); if (!why) return;
             call('PATCH', '/admin/staff/' + u.id, { action: 'suspend', reason: why }).then(loadSubList, function (e) { msg('subMsg', e.message); });
           } });
-        var areas = s.assignments.map(function (l) { return l.nameTe; }).join(', ') || (u.role === 'SUPER_ADMIN' || u.role === 'MANAGING_EDITOR' ? 'అన్ని ప్రాంతాలు (All areas)' : '—');
+        var areas = s.assignments.map(function (l) { return l.nameEn; }).join(', ') || (u.role === 'SUPER_ADMIN' || u.role === 'MANAGING_EDITOR' ? 'All areas' : '—');
         box.appendChild(h('div', { class: 'person' },
-          h('div', {}, h('b', { text: u.name || u.email }), ' ', h('span', { class: 'badge', text: ROLE[u.role] || u.role }), off ? h('span', { class: 'badge REJECTED', text: 'నిలిపివేశారు' }) : null,
+          h('div', {}, h('b', { text: u.name || u.email }), ' ', h('span', { class: 'badge', text: ROLE[u.role] || u.role }), off ? h('span', { class: 'badge REJECTED', text: 'Suspended' }) : null,
             h('div', { class: 'meta' }, '📍 ' + areas + ' · ' + (u.email || ''), ' ', tel(u.phone))),
           act));
       });
@@ -308,19 +308,19 @@
 
   // ---------- forgotten / change password: OTP to the account's registered mobile ----------
   if ($('forgotPw')) $('forgotPw').addEventListener('click', function () {
-    var login = prompt('యూజర్‌నేమ్ / ఈమెయిల్ (Username / email)', $('email').value.trim() || 'admin');
+    var login = prompt('Username / email', $('email').value.trim() || 'admin');
     if (!login) return;
     fetch(API + '/auth/staff/password/otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ login: login.trim() }) })
       .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d && d.message || 'Error'); return d; }); })
       .then(function (d) {
-        var code = prompt('OTP పంపబడింది: ' + d.to + ' — 6 అంకెల OTP నమోదు చేయండి (Enter the 6-digit OTP)');
+        var code = prompt('OTP sent to ' + d.to + ' — enter the 6-digit OTP');
         if (!code) return;
-        var pw = prompt('కొత్త పాస్‌వర్డ్ — 10+ అక్షరాలు, అంకెలతో (New password: 10+ characters with numbers)');
+        var pw = prompt('New password: 10+ characters with numbers');
         if (!pw) return;
-        if (prompt('కొత్త పాస్‌వర్డ్ మళ్లీ (Type it again)') !== pw) throw new Error('రెండు పాస్‌వర్డ్‌లు ఒకేలా లేవు (Passwords do not match)');
+        if (prompt('Type it again') !== pw) throw new Error('Passwords do not match');
         return fetch(API + '/auth/staff/password/reset', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ login: login.trim(), code: code.trim(), newPassword: pw }) })
           .then(function (r) { return r.json().then(function (x) { if (!r.ok) throw new Error(x && x.message || 'Error'); }); })
-          .then(function () { saveTokens(null); msg('loginMsg', '✔ పాస్‌వర్డ్ మార్చబడింది. కొత్త పాస్‌వర్డ్‌తో లాగిన్ అవ్వండి. (Password changed)', true); start(); });
+          .then(function () { saveTokens(null); msg('loginMsg', '✔ Password changed', true); start(); });
       })
       .catch(function (e) { msg('loginMsg', e.message); });
   });
@@ -328,7 +328,7 @@
   start();
 
   // ---------- 5. Auto News (master admin only) ----------
-  var KIND = { PRESS_RELEASE: 'ప్రెస్ నోట్లు (Press releases)', OFFICIAL_ALERT: 'అధికారిక హెచ్చరికలు (Official alerts)', RSS: 'RSS ఫీడ్', TIP_ONLY: 'టిప్ మాత్రమే (Tip only)' };
+  var KIND = { PRESS_RELEASE: 'Press releases', OFFICIAL_ALERT: 'Official alerts', RSS: 'RSS feed', TIP_ONLY: 'Tip only' };
   function loadAuto() {
     msg('anMsg', ''); msg('anSrcMsg', '');
     call('GET', '/admin/auto-news').then(function (r) {
@@ -337,8 +337,8 @@
       $('anInterval').value = String(s.intervalMinutes); $('anLimit').value = String(s.dailyCostLimitInr);
       var ks = $('anKeyState'); ks.innerHTML = '';
       ks.appendChild(h('div', { class: 'msg ' + (r.keyConfigured ? 'ok' : 'err'), text: r.keyConfigured
-        ? '✔ కీ సేవ్ అయింది — చివరి 4 అక్షరాలు …' + r.key.last4 + (r.key.where === 'server' ? ' (server setting)' : '') + ' · ఈ రోజు ఖర్చు ₹' + r.today.spentInr.toFixed(2) + ' / ₹' + r.settings.dailyCostLimitInr
-        : '✖ కీ ఇంకా లేదు (No key yet). platform.claude.com → API Keys → Create Key, ఆపై ఇక్కడ పేస్ట్ చేయండి.' }));
+        ? '✔ Key saved — ends with …' + r.key.last4 + (r.key.where === 'server' ? ' (server setting)' : '') + ' · spent today ₹' + r.today.spentInr.toFixed(2) + ' / ₹' + r.settings.dailyCostLimitInr
+        : '✖ No key yet. Create one at platform.claude.com → API Keys → Create Key, then paste it below.' }));
       show('anKeyRemove', r.keyConfigured && r.key.where === 'saved');
       renderSources(r.sources);
       $('anFound').textContent = r.today.found; $('anNew').textContent = r.today.new;
@@ -346,12 +346,12 @@
       loadItems(); loadRuns();
     }).catch(function (e) { msg('anMsg', e.message); });
   }
-  var ITEM = { NEW: 'కొత్తది (New)', DUPLICATE: 'డూప్లికేట్ (Duplicate)', TIP: 'టిప్ (Tip)', SKIPPED: 'వదిలేశాం (Skipped)' };
+  var ITEM = { NEW: 'New', DUPLICATE: 'Duplicate', TIP: 'Tip', SKIPPED: 'Skipped' };
   function loadItems() {
     var box = $('anItems'); box.innerHTML = '';
     var st = $('anItemStatus').value;
     call('GET', '/admin/auto-news/items?limit=60' + (st ? '&status=' + st : '')).then(function (list) {
-      if (!list.length) { box.appendChild(h('p', { class: 'help', text: 'ఇంకా ఏమీ లేవు. "ఇప్పుడే చూడండి" నొక్కండి. (Nothing yet — press "Check now".)' })); return; }
+      if (!list.length) { box.appendChild(h('p', { class: 'help', text: 'Nothing yet — press "Check now".' })); return; }
       list.forEach(function (x) {
         box.appendChild(h('div', { class: 'item' },
           h('div', { style: 'flex:1;min-width:0' },
@@ -361,34 +361,34 @@
             x.alert && x.alert.headlineTe ? h('div', { class: 'help', text: x.alert.headlineTe }) : null,
             x.summary ? h('div', { class: 'help', text: x.summary.length > 220 ? x.summary.slice(0, 220) + '…' : x.summary }) : null,
             h('div', { class: 'meta', text: '📡 ' + x.sourceName + (x.area ? ' · 📍 ' + x.area : '') + ' · ' + ago(x.publishedAt || x.createdAt)
-              + (x.alert && x.alert.expires ? ' · ⏳ ' + new Date(x.alert.expires).toLocaleString('te-IN', { dateStyle: 'short', timeStyle: 'short' }) + ' వరకు (until)' : '') }),
-            h('a', { href: x.url, target: '_blank', rel: 'noopener noreferrer', style: 'font-size:13px;color:#2563EB;word-break:break-all', text: '🔗 అసలు వార్త (Original)' }))));
+              + (x.alert && x.alert.expires ? ' · ⏳ ' + new Date(x.alert.expires).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' }) + ' until' : '') }),
+            h('a', { href: x.url, target: '_blank', rel: 'noopener noreferrer', style: 'font-size:13px;color:#2563EB;word-break:break-all', text: '🔗 Original' }))));
       });
     }).catch(function (e) { box.appendChild(h('div', { class: 'msg err', text: e.message })); });
   }
   function loadRuns() {
     var box = $('anRuns'); box.innerHTML = '';
     call('GET', '/admin/auto-news/runs?limit=20').then(function (list) {
-      if (!list.length) { box.appendChild(h('p', { class: 'help', text: 'ఇంకా తనిఖీలు జరగలేదు. (No checks yet.)' })); return; }
+      if (!list.length) { box.appendChild(h('p', { class: 'help', text: 'No checks yet.' })); return; }
       list.forEach(function (r) {
         box.appendChild(h('div', { class: 'item' }, h('div', { style: 'flex:1' },
           h('div', { style: 'font-weight:700;font-size:14px', text: (r.error ? '⚠ ' : '✔ ') + r.sourceName }),
-          h('div', { class: 'meta', text: ago(r.startedAt) + ' · ' + (r.trigger === 'manual' ? 'మీరు నొక్కారు (manual)' : 'ఆటోమేటిక్ (automatic)')
-            + ' · దొరికినవి ' + r.found + ' · కొత్తవి ' + r.added + ' · డూప్లికేట్ ' + r.duplicates + ' · వదిలేసినవి ' + r.skipped }),
+          h('div', { class: 'meta', text: ago(r.startedAt) + ' · ' + (r.trigger === 'manual' ? 'manual' : 'automatic')
+            + ' · found ' + r.found + ' · new ' + r.added + ' · duplicates ' + r.duplicates + ' · skipped ' + r.skipped }),
           r.error ? h('div', { class: 'msg err', style: 'margin:6px 0 0', text: r.error }) : null)));
       });
     }).catch(function (e) { box.appendChild(h('div', { class: 'msg err', text: e.message })); });
   }
   function renderSources(list) {
     var box = $('anSources'); box.innerHTML = '';
-    if (!list.length) { box.appendChild(h('p', { class: 'help', text: 'మూలాలు లేవు. కింద జోడించండి. (No sources yet — add one below.)' })); return; }
+    if (!list.length) { box.appendChild(h('p', { class: 'help', text: 'No sources yet — add one below.' })); return; }
     list.forEach(function (x) {
       function toggle(field, label, allowed, help) {
         var cb = h('input', { type: 'checkbox' }); cb.checked = !!x[field]; if (!allowed) cb.disabled = true;
         cb.addEventListener('change', function () {
           var body = {}; body[field] = cb.checked;
-          if (field === 'autoPublish' && cb.checked && !confirm('ఈ మూలం నుంచి వార్తలు మీ ఆమోదం లేకుండా నేరుగా ప్రచురించబడతాయి. సరేనా?\n(Posts from this source will go live WITHOUT approval. Are you sure?)')) { cb.checked = false; return; }
-          call('PATCH', '/admin/auto-news/sources/' + x.id, body).then(function () { msg('anSrcMsg', '✔ సేవ్ అయింది (Saved)', true); loadAuto(); },
+          if (field === 'autoPublish' && cb.checked && !confirm('Posts from this source will go live WITHOUT approval. Are you sure?')) { cb.checked = false; return; }
+          call('PATCH', '/admin/auto-news/sources/' + x.id, body).then(function () { msg('anSrcMsg', '✔ Saved', true); loadAuto(); },
             function (e) { cb.checked = !cb.checked; msg('anSrcMsg', e.message); });
         });
         return h('label', { title: help || '' }, cb, label);
@@ -398,25 +398,25 @@
         h('h3', null, h('span', { class: 'badge kind ' + x.kind, text: KIND[x.kind] || x.kind }), x.name),
         h('a', { href: x.url, target: '_blank', rel: 'noopener noreferrer', text: x.url }),
         x.note ? h('div', { class: 'meta', text: '📝 ' + x.note }) : null,
-        h('div', { class: 'meta', text: (x.lastCheckedAt ? 'చివరిగా చూసింది (Last checked): ' + ago(x.lastCheckedAt) : 'ఇంకా చూడలేదు (Not checked yet)') + (gov ? ' · 🏛 ప్రభుత్వ సైట్ (Government site)' : '') }),
+        h('div', { class: 'meta', text: (x.lastCheckedAt ? 'Last checked: ' + ago(x.lastCheckedAt) : 'Not checked yet') + (gov ? ' · 🏛 Government site' : '') }),
         x.lastError ? h('div', { class: 'msg err', text: '⚠ ' + x.lastError }) : null,
         h('div', { class: 'toggles' },
-          toggle('enabled', 'ఆన్ (On)', true),
-          toggle('photosAllowed', 'ఫోటోలు వాడవచ్చు (Use photos)', gov && x.kind !== 'TIP_ONLY', 'Government sites only'),
-          x.kind === 'OFFICIAL_ALERT' ? toggle('autoPublish', 'ఆమోదం లేకుండా ప్రచురించు (Publish without approval)', gov, 'Official government alerts only') : null),
-        h('div', { class: 'actions' }, h('button', { class: 'btn out small', type: 'button', text: '🗑 తీసివేయండి (Remove)', onclick: function () {
-          if (!confirm('"' + x.name + '" ను జాబితా నుంచి తీసివేయాలా? (Remove this source?)')) return;
-          call('DELETE', '/admin/auto-news/sources/' + x.id).then(function () { msg('anSrcMsg', '✔ తీసివేశాం (Removed)', true); loadAuto(); }, function (e) { msg('anSrcMsg', e.message); });
+          toggle('enabled', 'On', true),
+          toggle('photosAllowed', 'Use photos', gov && x.kind !== 'TIP_ONLY', 'Government sites only'),
+          x.kind === 'OFFICIAL_ALERT' ? toggle('autoPublish', 'Publish without approval', gov, 'Official government alerts only') : null),
+        h('div', { class: 'actions' }, h('button', { class: 'btn out small', type: 'button', text: '🗑 Remove', onclick: function () {
+          if (!confirm('Remove the source "' + x.name + '"?')) return;
+          call('DELETE', '/admin/auto-news/sources/' + x.id).then(function () { msg('anSrcMsg', '✔ Removed', true); loadAuto(); }, function (e) { msg('anSrcMsg', e.message); });
         } }))));
     });
   }
   $('anSave').addEventListener('click', function () {
     var limit = Number(String($('anLimit').value).replace(/[₹,\s]/g, ''));
-    if (!(limit >= 0 && limit <= 10000 && Math.floor(limit) === limit)) { msg('anMsg', 'ఖర్చు పరిమితి 0 నుంచి 10,000 రూపాయల మధ్య, పూర్తి సంఖ్య ఉండాలి (Limit must be whole rupees, 0 to 10,000)'); return; }
-    if ($('anEnabled').checked && !$('anTest').checked && !confirm('టెస్ట్ మోడ్ ఆఫ్ — ఆమోదించిన వార్తలు అందరికీ కనిపిస్తాయి. సరేనా?\n(Test mode OFF — approved posts will be visible to everyone. Continue?)')) return;
+    if (!(limit >= 0 && limit <= 10000 && Math.floor(limit) === limit)) { msg('anMsg', 'Limit must be whole rupees, 0 to 10,000'); return; }
+    if ($('anEnabled').checked && !$('anTest').checked && !confirm('Test mode OFF — approved posts will be visible to everyone. Continue?')) return;
     $('anSave').disabled = true;
     call('PATCH', '/admin/auto-news/settings', { enabled: $('anEnabled').checked, testMode: $('anTest').checked, intervalMinutes: Number($('anInterval').value), dailyCostLimitInr: limit })
-      .then(function () { msg('anMsg', '✔ సెట్టింగ్స్ సేవ్ అయ్యాయి (Settings saved)', true); loadAuto(); })
+      .then(function () { msg('anMsg', '✔ Settings saved', true); loadAuto(); })
       .catch(function (e) { msg('anMsg', e.message); })
       .then(function () { $('anSave').disabled = false; });
   });
@@ -426,35 +426,35 @@
     if ($('anNote').value.trim()) body.note = $('anNote').value.trim();
     call('POST', '/admin/auto-news/sources', body).then(function (r) {
       ['anName', 'anUrl', 'anNote'].forEach(function (id) { $(id).value = ''; }); $('anPhotos').checked = false;
-      msg('anAddMsg', '✔ జోడించాం (Added)' + (r.notes && r.notes.length ? ' — ' + r.notes.join(' ') : ''), true); loadAuto();
+      msg('anAddMsg', '✔ Added' + (r.notes && r.notes.length ? ' — ' + r.notes.join(' ') : ''), true); loadAuto();
     }).catch(function (err) { msg('anAddMsg', err.message); });
   });
   $('anItemStatus').addEventListener('change', loadItems);
   $('anCheck').addEventListener('click', function () {
-    var b = $('anCheck'); b.disabled = true; b.textContent = '⏳ చూస్తున్నాం… (Checking — up to 1 minute)'; msg('anCheckMsg', '');
+    var b = $('anCheck'); b.disabled = true; b.textContent = '⏳ Checking — up to 1 minute'; msg('anCheckMsg', '');
     call('POST', '/admin/auto-news/check-now', {}).then(function (r) {
       var added = r.results.reduce(function (a, x) { return a + x.added; }, 0);
       var errs = r.results.filter(function (x) { return x.error; }).length;
-      msg('anCheckMsg', '✔ ' + r.results.length + ' మూలాలు చూశాం, ' + added + ' కొత్త వార్తలు దొరికాయి (' + r.results.length + ' sources checked, ' + added + ' new items)' + (errs ? ' · ⚠ ' + errs + ' మూలాల్లో సమస్య — లాగ్ చూడండి (problems in ' + errs + ' — see the log)' : ''), !errs);
+      msg('anCheckMsg', '✔ ' + r.results.length + ' sources checked, ' + added + ' new items' + (errs ? ' · ⚠ problems in ' + errs + ' — see the check log' : ''), !errs);
       loadAuto();
     }).catch(function (e) { msg('anCheckMsg', e.message); })
-      .then(function () { b.disabled = false; b.textContent = '🔄 ఇప్పుడే చూడండి (Check now)'; });
+      .then(function () { b.disabled = false; b.textContent = '🔄 Check now'; });
   });
 
   // ---------- Claude key (master admin) ----------
   $('anKeyForm').addEventListener('submit', function (e) {
     e.preventDefault(); msg('anKeyMsg', '');
     var k = $('anKeyInput').value.trim();
-    if (!k) { msg('anKeyMsg', 'కీ పేస్ట్ చేయండి (Paste the key)'); return; }
-    msg('anKeyMsg', '⏳ Claude తో కీ సరిచూస్తున్నాం… (Checking the key with Claude…)', true);
+    if (!k) { msg('anKeyMsg', 'Paste the key'); return; }
+    msg('anKeyMsg', '⏳ Checking the key with Claude…', true);
     call('PUT', '/admin/auto-news/api-key', { key: k }).then(function (r) {
       $('anKeyInput').value = '';
-      msg('anKeyMsg', '✔ కీ పని చేస్తోంది, సేవ్ అయింది (Key works and is saved) — …' + r.last4, true); loadAuto();
+      msg('anKeyMsg', '✔ Key works and is saved — …' + r.last4, true); loadAuto();
     }).catch(function (err) { $('anKeyInput').value = ''; msg('anKeyMsg', err.message); });
   });
   $('anKeyRemove').addEventListener('click', function () {
-    if (!confirm('Claude కీని తీసివేయాలా? ఆ తర్వాత త్వరిత వార్త పని చేయదు. (Remove the Claude key? Quick news will stop working.)')) return;
-    call('DELETE', '/admin/auto-news/api-key').then(function () { msg('anKeyMsg', '✔ తీసివేశాం (Removed)', true); loadAuto(); }, function (e) { msg('anKeyMsg', e.message); });
+    if (!confirm('Remove the Claude key? Quick news will stop working.')) return;
+    call('DELETE', '/admin/auto-news/api-key').then(function () { msg('anKeyMsg', '✔ Removed', true); loadAuto(); }, function (e) { msg('anKeyMsg', e.message); });
   });
 
   // ---------- 6. Quick news (paste from WhatsApp → Claude → waiting for approval) ----------
@@ -466,14 +466,14 @@
         if (!res.ok) { var m = data && data.message; throw new Error(Array.isArray(m) ? m.join(', ') : (m || 'Error ' + res.status)); }
         return data;
       });
-    }, function () { throw new Error('ఇంటర్నెట్ / సర్వర్ అందుబాటులో లేదు (No connection)'); });
+    }, function () { throw new Error('No connection'); });
   }
   function loadQuick() {
     msg('qMsg', '');
     call('GET', '/admin/quick-news/usage').then(function (u) {
       $('qUsage').textContent = u.keyConfigured
-        ? '💰 ఈ రోజు ఖర్చు (Today): ₹' + u.spentTodayInr.toFixed(2) + ' / ₹' + u.limitInr + ' · ఒక్కో వార్తకు సుమారు ₹1.5–2 (about ₹1.5–2 per post)'
-        : '🔑 Claude కీ ఇంకా సేవ్ కాలేదు — మాస్టర్ అడ్మిన్ "ఆటో న్యూస్" ట్యాబ్‌లో జోడించాలి. (Claude key not set yet — the master admin adds it in the Auto News tab.)';
+        ? '💰 Today: ₹' + u.spentTodayInr.toFixed(2) + ' / ₹' + u.limitInr + ' · about ₹1.5–2 per post'
+        : '🔑 Claude key not set yet — the master admin adds it in the Auto News tab.';
     }).catch(function () {});
   }
   function syncPhotoBox() {
@@ -487,23 +487,23 @@
   $('qForm').addEventListener('submit', function (e) {
     e.preventDefault(); msg('qMsg', '');
     var files = $('qPhotos').files;
-    if (!$('qText').value.trim() && !files.length) { msg('qMsg', 'మెసేజ్ పేస్ట్ చేయండి లేదా ఫోటో జోడించండి (Paste the text or add a photo)'); return; }
-    if (files.length > 4) { msg('qMsg', '4 ఫోటోల వరకు మాత్రమే (Up to 4 photos)'); return; }
+    if (!$('qText').value.trim() && !files.length) { msg('qMsg', 'Paste the text or add a photo'); return; }
+    if (files.length > 4) { msg('qMsg', 'Up to 4 photos'); return; }
     var f = new FormData();
     f.append('text', $('qText').value); f.append('sourceKind', $('qKind').value); f.append('sourceName', $('qSource').value.trim());
     if ($('qUrl').value.trim()) f.append('sourceUrl', $('qUrl').value.trim());
     f.append('usePhoto', $('qUsePhoto').checked ? 'true' : 'false');
-    var b = $('qGo'); b.disabled = true; b.textContent = '⏳ Claude రాస్తోంది… (Writing — about 10–30 seconds)';
+    var b = $('qGo'); b.disabled = true; b.textContent = '⏳ Claude is writing — about 10–30 seconds';
     show('qResult', false);
     Promise.all(Array.prototype.map.call(files, shrink)).then(function (blobs) {
       blobs.forEach(function (bl, i) { f.append('photos', bl, 'photo' + (i + 1) + '.jpg'); });
       return upload('/admin/quick-news', f);
     }).then(function (r) {
-      if (r.notNews) { msg('qMsg', 'ℹ ఇది వార్త కాదని Claude చెప్పింది — పోస్ట్ చేయలేదు. (Claude says this is not news — no post made.) ఖర్చు ₹' + r.costInr.toFixed(2)); return; }
+      if (r.notNews) { msg('qMsg', 'ℹ Claude says this is not news — no post made. Cost ₹' + r.costInr.toFixed(2)); return; }
       $('qText').value = ''; $('qUrl').value = ''; $('qPhotos').value = ''; $('qUsePhoto').checked = false;
       showDraft(r);
     }).catch(function (err) { msg('qMsg', err.message); })
-      .then(function () { b.disabled = false; b.textContent = '✨ వార్త రాయించండి (Make news)'; loadQuick(); counts(); });
+      .then(function () { b.disabled = false; b.textContent = '✨ Make news'; loadQuick(); counts(); });
   });
   /** Make a phone photo small (longest side 1600 px, JPEG) before sending: faster, and under the 12 MB upload limit. */
   function shrink(file) {
@@ -523,11 +523,11 @@
     var teS = h('textarea', { maxlength: '2000' }); teS.value = r.te.story;
     var enH = h('input', { type: 'text', maxlength: '160' }); enH.value = r.en.headline;
     var enS = h('textarea', { maxlength: '2000' }); enS.value = r.en.story;
-    var cnt = function (ta) { var c = h('div', { class: 'count' }); var upd = function () { c.textContent = words(ta.value) + ' పదాలు (words)'; }; ta.addEventListener('input', upd); upd(); return c; };
+    var cnt = function (ta) { var c = h('div', { class: 'count' }); var upd = function () { c.textContent = words(ta.value) + ' words'; }; ta.addEventListener('input', upd); upd(); return c; };
     var resMsg = h('div');
     var flags = [];
-    if (r.needsVerification) flags.push(h('div', { class: 'msg err', text: '⚠ ధృవీకరించాలి (Needs verification): ' + (r.verificationReason || '') + ' — ఆమోదించే ముందు ఫోన్ చేసి సరిచూడండి. (Check by phone before approving.)' }));
-    if (r.missingInfo) flags.push(h('div', { class: 'msg err', style: 'background:#FFF6E0;color:#7A4D00', text: 'ℹ స్పష్టంగా లేనివి (Unclear / missing): ' + r.missingInfo }));
+    if (r.needsVerification) flags.push(h('div', { class: 'msg err', text: '⚠ Needs verification: ' + (r.verificationReason || '') + ' — Check by phone before approving.' }));
+    if (r.missingInfo) flags.push(h('div', { class: 'msg err', style: 'background:#FFF6E0;color:#7A4D00', text: 'ℹ Unclear / missing: ' + r.missingInfo }));
     (r.notes || []).filter(function (n) { return !/^NEEDS VERIFICATION|^Missing/.test(n); }).forEach(function (n) { flags.push(h('div', { class: 'msg err', style: 'background:#FFF6E0;color:#7A4D00', text: '📍 ' + n })); });
     function editedTranslations() {
       return [
@@ -539,39 +539,39 @@
     function saveEdits() {
       if (!changed()) return Promise.resolve();
       var t = editedTranslations();
-      if (t.some(function (x) { return x.headline.length < 5 || x.body.length < 10; })) return Promise.reject(new Error('శీర్షిక, వార్త ఖాళీగా ఉండకూడదు (Headline and story cannot be empty)'));
+      if (t.some(function (x) { return x.headline.length < 5 || x.body.length < 10; })) return Promise.reject(new Error('Headline and story cannot be empty'));
       return call('PATCH', '/newsroom/articles/' + r.articleId, { translations: t }).then(function () {
         r.te = { headline: teH.value, story: teS.value }; r.en = { headline: enH.value, story: enS.value };
       });
     }
     var busy = function (on) { Array.prototype.forEach.call(box.querySelectorAll('button'), function (x) { x.disabled = on; }); };
-    box.appendChild(h('h2', { style: 'margin-top:0', text: '📝 డ్రాఫ్ట్ సిద్ధం — మీ ఆమోదం కోసం (Draft ready — waiting for your approval)' }));
-    box.appendChild(h('div', { class: 'meta', text: '✍ MAVY Desk · 🏷 ' + r.category.nameTe + ' (' + r.category.nameEn + ') · 📍 ' + r.place + ' · మూలం (Source): ' + r.sourceName + ' · ఖర్చు ₹' + r.costInr.toFixed(2) }));
+    box.appendChild(h('h2', { style: 'margin-top:0', text: '📝 Draft ready — waiting for your approval' }));
+    box.appendChild(h('div', { class: 'meta', text: '✍ MAVY Desk · 🏷 ' + r.category.nameEn + ' · 📍 ' + r.place + ' · Source: ' + r.sourceName + ' · cost ₹' + r.costInr.toFixed(2) }));
     flags.forEach(function (f) { box.appendChild(f); });
     if (r.heroImageUrl) box.appendChild(h('img', { class: 'photo', src: r.heroImageUrl, alt: '' }));
-    box.appendChild(h('label', { text: 'తెలుగు శీర్షిక (Telugu headline)' })); box.appendChild(teH);
-    box.appendChild(h('label', { text: 'తెలుగు వార్త (Telugu story)' })); box.appendChild(teS); box.appendChild(cnt(teS));
+    box.appendChild(h('label', { text: 'Telugu headline' })); box.appendChild(teH);
+    box.appendChild(h('label', { text: 'Telugu story' })); box.appendChild(teS); box.appendChild(cnt(teS));
     box.appendChild(h('label', { text: 'English headline' })); box.appendChild(enH);
     box.appendChild(h('label', { text: 'English story' })); box.appendChild(enS); box.appendChild(cnt(enS));
     box.appendChild(resMsg);
     box.appendChild(h('div', { class: 'actions', style: 'margin-top:14px' },
-      h('button', { class: 'btn', type: 'button', text: '✅ ఆమోదించి ప్రచురించండి (Approve & publish)', onclick: function () {
-        if (r.needsVerification && !confirm('ఈ వార్తను ధృవీకరించారా? (Have you verified this news?)')) return;
-        if (!r.placeFound && !confirm('ప్రాంతం దొరకలేదు — ఆంధ్రప్రదేశ్ స్థాయిలో ప్రచురించాలా? (No place found — publish at state level?)')) return;
+      h('button', { class: 'btn', type: 'button', text: '✅ Approve & publish', onclick: function () {
+        if (r.needsVerification && !confirm('Have you verified this news?')) return;
+        if (!r.placeFound && !confirm('No place found — publish at state level?')) return;
         busy(true); msg(resMsg.id = 'qResMsg', '');
         saveEdits().then(function () { return approveAndPublish({ id: r.articleId, status: 'SUBMITTED' }); })
-          .then(function () { box.innerHTML = ''; box.appendChild(h('div', { class: 'msg ok', text: '✔ ప్రచురించబడింది! యాప్‌లో, www.mavynews.com లో "MAVY Desk" పేరుతో కనిపిస్తుంది. (Published — visible in the app and website as "MAVY Desk".)' })); counts(); })
+          .then(function () { box.innerHTML = ''; box.appendChild(h('div', { class: 'msg ok', text: '✔ Published — now visible in the app and on www.mavynews.com as "MAVY Desk".' })); counts(); })
           .catch(function (err) { busy(false); msg('qResMsg', err.message); });
       } }),
-      h('button', { class: 'btn out', type: 'button', text: '💾 మార్పులు సేవ్ (Save edits only)', onclick: function () {
+      h('button', { class: 'btn out', type: 'button', text: '💾 Save edits only', onclick: function () {
         busy(true); msg(resMsg.id = 'qResMsg', '');
-        saveEdits().then(function () { busy(false); msg('qResMsg', '✔ సేవ్ అయింది — "వార్తల సమీక్ష" ట్యాబ్‌లో "న్యూస్‌రూమ్ వార్తలు" లో ఉంది. (Saved — it is in the Review tab under Newsroom staff.)', true); })
+        saveEdits().then(function () { busy(false); msg('qResMsg', '✔ Saved — it waits in the Review stories tab under "Newsroom staff".', true); })
           .catch(function (err) { busy(false); msg('qResMsg', err.message); });
       } }),
-      h('button', { class: 'btn red', type: 'button', text: '✖ తిరస్కరించండి (Reject)', onclick: function () {
-        var why = ask('ఎందుకు తిరస్కరిస్తున్నారు? (Why reject?)'); if (!why) return;
+      h('button', { class: 'btn red', type: 'button', text: '✖ Reject', onclick: function () {
+        var why = ask('Why reject?'); if (!why) return;
         busy(true); msg(resMsg.id = 'qResMsg', '');
-        transition(r.articleId, 'reject', why).then(function () { box.innerHTML = ''; box.appendChild(h('div', { class: 'msg ok', text: '✔ తిరస్కరించబడింది (Rejected)' })); counts(); })
+        transition(r.articleId, 'reject', why).then(function () { box.innerHTML = ''; box.appendChild(h('div', { class: 'msg ok', text: '✔ Rejected' })); counts(); })
           .catch(function (err) { busy(false); msg('qResMsg', err.message); });
       } })));
     box.scrollIntoView({ behavior: 'smooth', block: 'start' });

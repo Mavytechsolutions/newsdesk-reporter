@@ -78,14 +78,14 @@ export class QuickNewsService {
         .from(locations).where(and(like(locations.path, `%/${d.id}/%`), inArray(locations.type, ['MANDAL', 'MUNICIPALITY'])));
       rows.sort((x, y) => (x.type === 'MANDAL' ? 0 : 1) - (y.type === 'MANDAL' ? 0 : 1)); // a mandal also covers its town
       const m = rows.find((r) => norm(r.nameEn) === want) ?? rows.find((r) => r.nameTe === p.mandal);
-      if (m) return { loc: m, label: `${m.nameTe} (${m.nameEn}), ${d.nameTe}`, notes };
+      if (m) return { loc: m, label: `${m.nameEn}, ${d.nameEn} district`, notes };
       notes.push(`Mandal / town "${p.mandal}" is not in our list for ${d.nameEn}; the post is placed at district level.`);
     }
-    if (d) return { loc: d, label: `${d.nameTe} (${d.nameEn})`, notes };
+    if (d) return { loc: d, label: `${d.nameEn} district`, notes };
     const stateName = p.state === 'Telangana' ? 'Telangana' : p.state === 'Andhra Pradesh' ? 'Andhra Pradesh' : null;
     if (stateName) {
       const [st] = await this.db.select().from(locations).where(and(eq(locations.type, 'STATE'), ilike(locations.nameEn, stateName)));
-      if (st) { notes.push('No district was named; the post is placed at state level.'); return { loc: st, label: `${st.nameTe} (${st.nameEn})`, notes }; }
+      if (st) { notes.push('No district was named; the post is placed at state level.'); return { loc: st, label: st.nameEn, notes }; }
     }
     notes.push('No place was found in the material. Please set the place before approving.');
     return { loc: null, label: '', notes };
@@ -190,7 +190,7 @@ export class QuickNewsService {
     return {
       notNews: false, articleId, status: 'SUBMITTED',
       te, en, category: { slug: fallback.slug, nameTe: fallback.nameTe, nameEn: fallback.nameEn },
-      place: place.label || 'ఆంధ్రప్రదేశ్ (Andhra Pradesh) — please check', placeFound: !!place.loc,
+      place: place.label || 'Andhra Pradesh — please check the place', placeFound: !!place.loc,
       needsVerification: !!p.needs_verification, verificationReason: p.verification_reason || '', missingInfo: p.missing_info || '',
       notes, heroImageUrl: hero, sourceName: dto.sourceName.trim(), ...money,
     };

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="te">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -81,62 +81,62 @@ a.tel{color:var(--navy);font-weight:700}
 </head>
 <body>
 <header>
-  <div class="logo">MAVY <b>NEWS</b> · అడ్మిన్</div>
-  <a class="link" href="/newsroom">✍ న్యూస్‌రూమ్</a>
+  <div class="logo">MAVY <b>NEWS</b> · Admin</div>
+  <a class="link" href="/newsroom">✍ Newsroom</a>
   <span class="who" id="who"></span>
-  <button class="link hidden" id="logout">లాగ్ అవుట్</button>
+  <button class="link hidden" id="logout">Log out</button>
 </header>
 <main>
   <section id="loginView" class="card hidden">
-    <h2 style="margin-top:0">అడ్మిన్ లాగిన్ (Admin login)</h2>
+    <h2 style="margin-top:0">Admin login</h2>
     <form id="loginForm">
-      <label>యూజర్‌నేమ్ / ఈమెయిల్ (Username / email)</label>
+      <label>Username / email</label>
       <input type="text" id="email" autocomplete="username" autocapitalize="none" required>
-      <label>పాస్‌వర్డ్ (Password)</label>
+      <label>Password</label>
       <input type="password" id="password" autocomplete="current-password" required>
       <div id="loginMsg"></div>
-      <button class="btn" style="width:100%;margin-top:16px" type="submit">లాగిన్</button>
+      <button class="btn" style="width:100%;margin-top:16px" type="submit">Log in</button>
     </form>
-    <button type="button" class="btn out" id="forgotPw" style="width:100%;margin-top:10px">🔑 పాస్‌వర్డ్ మర్చిపోయారా? / మార్చండి (OTP)</button>
+    <button type="button" class="btn out" id="forgotPw" style="width:100%;margin-top:10px">🔑 Forgot / change password (OTP)</button>
   </section>
 
   <section id="noAccess" class="card hidden">
-    <h2 style="margin-top:0">ఈ పేజీ అడ్మిన్ల కోసం మాత్రమే</h2>
+    <h2 style="margin-top:0">This page is for admins only</h2>
     <p class="help">This page is for the Super Admin, Managing Editor and district / mandal sub-admins. Reporters can write stories in the <a href="/newsroom">newsroom</a>.</p>
   </section>
 
   <section id="appView" class="hidden">
     <div class="stats">
-      <div class="stat"><b id="cWaiting">–</b><span>సమీక్షకు వార్తలు<br>Stories waiting</span></div>
-      <div class="stat"><b id="cApps">–</b><span>కొత్త దరఖాస్తులు<br>New requests</span></div>
-      <div class="stat"><b id="cJournalists">–</b><span>జర్నలిస్టులు<br>Journalists</span></div>
+      <div class="stat"><b id="cWaiting">–</b><span>Stories waiting</span></div>
+      <div class="stat"><b id="cApps">–</b><span>New journalist requests</span></div>
+      <div class="stat"><b id="cJournalists">–</b><span>Journalists</span></div>
     </div>
     <div class="tabs">
-      <button data-tab="review" class="on">📝 వార్తల సమీక్ష</button>
-      <button data-tab="apps">🪪 దరఖాస్తులు</button>
-      <button data-tab="people">🏅 జర్నలిస్టులు</button>
-      <button data-tab="subs" id="tabSubs" class="hidden">👥 సబ్-అడ్మిన్లు</button>
-      <button data-tab="quick">✨ త్వరిత వార్త</button>
-      <button data-tab="auto" id="tabAuto" class="hidden">🤖 ఆటో న్యూస్</button>
+      <button data-tab="review" class="on">📝 Review stories</button>
+      <button data-tab="apps">🪪 Requests</button>
+      <button data-tab="people">🏅 Journalists</button>
+      <button data-tab="subs" id="tabSubs" class="hidden">👥 Sub-admins</button>
+      <button data-tab="quick">✨ Quick news</button>
+      <button data-tab="auto" id="tabAuto" class="hidden">🤖 Auto News</button>
     </div>
 
     <!-- REVIEW -->
     <section id="review" class="card">
       <div class="row">
         <select id="rStatus">
-          <option value="SUBMITTED,IN_REVIEW">సమీక్షకు వచ్చినవి (Waiting)</option>
-          <option value="DRAFT,SUBMITTED,IN_REVIEW,CHANGES_REQUESTED,APPROVED,SCHEDULED,PUBLISHED,REJECTED,ARCHIVED">అన్ని వార్తలు (All stories)</option>
-          <option value="DRAFT">డ్రాఫ్ట్‌లు (Drafts)</option>
-          <option value="APPROVED,SCHEDULED">ఆమోదించినవి / షెడ్యూల్ (Approved / scheduled)</option>
-          <option value="CHANGES_REQUESTED">మార్పుల కోసం పంపినవి (Sent back)</option>
-          <option value="PUBLISHED">ప్రచురించినవి (Published)</option>
-          <option value="REJECTED">తిరస్కరించినవి (Rejected)</option>
-          <option value="ARCHIVED">తీసివేసినవి (Taken down)</option>
+          <option value="SUBMITTED,IN_REVIEW">Waiting</option>
+          <option value="DRAFT,SUBMITTED,IN_REVIEW,CHANGES_REQUESTED,APPROVED,SCHEDULED,PUBLISHED,REJECTED,ARCHIVED">All stories</option>
+          <option value="DRAFT">Drafts</option>
+          <option value="APPROVED,SCHEDULED">Approved / scheduled</option>
+          <option value="CHANGES_REQUESTED">Sent back</option>
+          <option value="PUBLISHED">Published</option>
+          <option value="REJECTED">Rejected</option>
+          <option value="ARCHIVED">Taken down</option>
         </select>
         <select id="rSource">
-          <option value="journalist">జర్నలిస్టుల వార్తలు (From journalists)</option>
-          <option value="staff">న్యూస్‌రూమ్ వార్తలు (Newsroom staff)</option>
-          <option value="">అన్నీ (All)</option>
+          <option value="journalist">From journalists</option>
+          <option value="staff">Newsroom staff</option>
+          <option value="">All</option>
         </select>
         <button class="btn out small" id="rRefresh" style="flex:none">↻</button>
       </div>
@@ -148,20 +148,20 @@ a.tel{color:var(--navy);font-weight:700}
     <section id="apps" class="card hidden">
       <div class="row">
         <select id="aStatus">
-          <option value="PENDING">కొత్తవి (Waiting)</option>
-          <option value="APPROVED">ఆమోదించినవి (Approved)</option>
-          <option value="REJECTED">తిరస్కరించినవి (Rejected)</option>
+          <option value="PENDING">Waiting</option>
+          <option value="APPROVED">Approved</option>
+          <option value="REJECTED">Rejected</option>
         </select>
         <button class="btn out small" id="aRefresh" style="flex:none">↻</button>
       </div>
-      <p class="help">ఆధార్ ఫోటో, పేరు సరిపోలుతున్నాయో చూసి ఆమోదించండి. నిర్ణయం తర్వాత ఆధార్ ఫోటో సర్వర్ నుంచి శాశ్వతంగా తొలగించబడుతుంది. (Check the name matches the Aadhaar. The Aadhaar photo is deleted for good after your decision.)</p>
+      <p class="help">Check the name matches the Aadhaar. The Aadhaar photo is deleted for good after your decision.</p>
       <div id="aMsg"></div>
       <div id="aList"></div>
     </section>
 
     <!-- JOURNALISTS -->
     <section id="people" class="card hidden">
-      <p class="help">జూనియర్ జర్నలిస్ట్ (0–99 వార్తలు) → ఒక్కో వార్తకు 5 పాయింట్లు · జర్నలిస్ట్ (100+) → 10 · సీనియర్ జర్నలిస్ట్ (500+, బ్యాడ్జ్) → 20. వార్త తీసివేస్తే దాని పాయింట్లు వెనక్కి.</p>
+      <p class="help">Junior Journalist (0–99 stories) → 5 points per approved story · Journalist (100+) → 10 · Senior Journalist (500+, badge) → 20. If a story is taken down, its points are removed.</p>
       <div id="pMsg"></div>
       <div id="pList"></div>
     </section>
@@ -169,24 +169,24 @@ a.tel{color:var(--navy);font-weight:700}
     <!-- SUB-ADMINS -->
     <section id="subs" class="hidden">
       <form id="subForm" class="card" autocomplete="off">
-        <h2 style="margin:0">కొత్త సబ్-అడ్మిన్ (New sub-admin)</h2>
-        <p class="help">సబ్-అడ్మిన్ తన జిల్లా / మండలం వార్తలు, జర్నలిస్ట్ దరఖాస్తులు మాత్రమే చూసి ఆమోదించగలరు. (A sub-admin can review stories and journalist requests only from their own area.)</p>
+        <h2 style="margin:0">New sub-admin</h2>
+        <p class="help">A sub-admin can review stories and journalist requests only from their own area.</p>
         <div class="grid2">
-          <div><label>పేరు (Name) *</label><input type="text" id="sName" maxlength="80" required></div>
-          <div><label>మొబైల్ (Mobile) <small>— ఐచ్ఛికం</small></label><input type="text" id="sPhone" maxlength="14" inputmode="tel"></div>
-          <div><label>ఈమెయిల్ (Email, for login) *</label><input type="email" id="sEmail" required></div>
-          <div><label>పాస్‌వర్డ్ (Password) *</label>
+          <div><label>Name *</label><input type="text" id="sName" maxlength="80" required></div>
+          <div><label>Mobile <small>— optional</small></label><input type="text" id="sPhone" maxlength="14" inputmode="tel"></div>
+          <div><label>Email, for login *</label><input type="email" id="sEmail" required></div>
+          <div><label>Password *</label>
             <div class="row"><input type="text" id="sPass" required minlength="10"><button type="button" class="btn out small" id="genPass" style="flex:none">🎲</button></div></div>
-          <div><label>రాష్ట్రం (State) *</label><select id="sState"></select></div>
-          <div><label>జిల్లా (District) *</label><select id="sDistrict" required></select></div>
+          <div><label>State *</label><select id="sState"></select></div>
+          <div><label>District *</label><select id="sDistrict" required></select></div>
         </div>
-        <label>మండలం / పట్టణం (Mandal / town) <small>— మొత్తం జిల్లాకు ఖాళీగా వదలండి (leave empty for the whole district)</small></label>
+        <label>Mandal / town <small>— leave empty for the whole district</small></label>
         <select id="sMandal"></select>
         <div id="sMsg"></div>
-        <button class="btn" type="submit" style="width:100%;margin-top:14px">సబ్-అడ్మిన్ సృష్టించండి (Create)</button>
+        <button class="btn" type="submit" style="width:100%;margin-top:14px">Create</button>
       </form>
       <section class="card">
-        <h2 style="margin-top:0">సబ్-అడ్మిన్లు, ఎడిటర్లు (Sub-admins & staff)</h2>
+        <h2 style="margin-top:0">Sub-admins & staff</h2>
         <div id="subMsg"></div>
         <div id="subList"></div>
       </section>
@@ -195,31 +195,31 @@ a.tel{color:var(--navy);font-weight:700}
     <!-- QUICK NEWS (admins + sub-admins) -->
     <section id="quick" class="hidden">
       <form id="qForm" class="card" autocomplete="off">
-        <h2 style="margin-top:0">✨ త్వరిత వార్త (Quick news from WhatsApp)</h2>
-        <p class="help">వాట్సాప్ మెసేజ్‌ను కాపీ చేసి ఇక్కడ పేస్ట్ చేయండి, లేదా ప్రెస్ నోట్ ఫోటో జోడించండి. Claude తెలుగు, ఇంగ్లీష్ వార్త రాస్తుంది — మీరు ఆమోదించే వరకు ఎవరికీ కనిపించదు. (Paste the WhatsApp message or add a photo of the press note. Claude writes Telugu + English; nobody sees it until you approve.)</p>
+        <h2 style="margin-top:0">✨ Quick news from WhatsApp</h2>
+        <p class="help">Paste the WhatsApp message or add a photo of the press note. Claude writes Telugu + English; nobody sees it until you approve.</p>
         <div id="qUsage" class="meta"></div>
-        <label>మెసేజ్ (Message text)</label>
-        <textarea id="qText" maxlength="6000" placeholder="వాట్సాప్ మెసేజ్ ఇక్కడ పేస్ట్ చేయండి… (paste here)"></textarea>
-        <label>ఇది ఎవరి నుంచి వచ్చింది? (Where is it from?) *</label>
+        <label>Message text</label>
+        <textarea id="qText" maxlength="6000" placeholder="paste here"></textarea>
+        <label>Where is it from? *</label>
         <select id="qKind">
-          <option value="OFFICIAL">అధికారిక ప్రెస్ నోట్ — కలెక్టర్/I&PR/పోలీస్ (Official press note)</option>
-          <option value="REPORTER">మా రిపోర్టర్ (Our reporter)</option>
-          <option value="UNVERIFIED">తెలియని ఫార్వర్డ్ — ధృవీకరించాలి (Unverified forward)</option>
+          <option value="OFFICIAL">Official press note — Collector / I&PR / Police</option>
+          <option value="REPORTER">Our reporter</option>
+          <option value="UNVERIFIED">Unverified forward — needs checking</option>
         </select>
-        <label>మూలం పేరు (Source name) * <small>— వార్త కింద "మూలం:" గా కనిపిస్తుంది (shown as "Source:")</small></label>
-        <input type="text" id="qSource" list="qSources" maxlength="120" required placeholder="ఉదా: I&PR అనంతపురం">
+        <label>Source name * <small>— shown under the story as "Source:"</small></label>
+        <input type="text" id="qSource" list="qSources" maxlength="120" required placeholder="e.g. I&PR Anantapur">
         <datalist id="qSources">
           <option value="I&PR Anantapur"><option value="Anantapur Collectorate PRO"><option value="Sri Sathya Sai Collectorate PRO">
           <option value="Anantapur District Police"><option value="Sri Sathya Sai District Police"><option value="DMHO Anantapur">
           <option value="MAVY NEWS reporter"><option value="WhatsApp group forward">
         </datalist>
-        <label>లింక్ (Source link) <small>— ఉంటే మాత్రమే (only if there is one)</small></label>
+        <label>Source link <small>— only if there is one</small></label>
         <input type="text" id="qUrl" maxlength="500" inputmode="url" placeholder="https://…">
-        <label>ఫోటోలు (Photos, up to 4) <small>— ప్రెస్ నోట్ ఫోటో అయినా సరే (a photo of the press note is fine)</small></label>
+        <label>Photos, up to 4 <small>— a photo of the press note is fine</small></label>
         <input type="file" id="qPhotos" accept="image/*" multiple>
-        <label class="check"><input type="checkbox" id="qUsePhoto"> మొదటి ఫోటోను వార్తలో వాడండి (Use the first photo in the story) <small>— అధికారిక/మా ఫోటోలు మాత్రమే</small></label>
+        <label class="check"><input type="checkbox" id="qUsePhoto"> Use the first photo in the story <small>— official or our own photos only</small></label>
         <div id="qMsg"></div>
-        <button class="btn" type="submit" id="qGo" style="width:100%;margin-top:14px">✨ వార్త రాయించండి (Make news)</button>
+        <button class="btn" type="submit" id="qGo" style="width:100%;margin-top:14px">✨ Make news</button>
       </form>
       <section id="qResult" class="card hidden"></section>
     </section>
@@ -227,86 +227,86 @@ a.tel{color:var(--navy);font-weight:700}
     <!-- AUTO NEWS (master admin only) -->
     <section id="auto" class="hidden">
       <section class="card">
-        <h2 style="margin-top:0">🔑 Claude API కీ (Claude API key)</h2>
+        <h2 style="margin-top:0">🔑 Claude API key</h2>
         <div id="anKeyState"></div>
         <form id="anKeyForm" autocomplete="off">
-          <label>కీ ఇక్కడ పేస్ట్ చేయండి (Paste the key here) <small>— sk-ant- తో మొదలవుతుంది (starts with sk-ant-)</small></label>
+          <label>Paste the key here <small>— starts with sk-ant-</small></label>
           <input type="password" id="anKeyInput" autocomplete="off" spellcheck="false" maxlength="400" placeholder="sk-ant-…">
-          <p class="help">కీ సర్వర్‌లో రహస్యంగా (ఎన్‌క్రిప్ట్ చేసి) దాచబడుతుంది. యాప్‌లో గానీ, ఈ పేజీలో గానీ మళ్లీ కనిపించదు — చివరి 4 అక్షరాలు మాత్రమే. (The key is stored encrypted on the server only. It is never shown again or sent to the app — only its last 4 characters.)</p>
+          <p class="help">The key is stored encrypted on the server only. It is never shown again or sent to the app — only its last 4 characters.</p>
           <div id="anKeyMsg"></div>
-          <div class="row"><button class="btn" type="submit">కీ సేవ్ చేయండి (Save key)</button>
-            <button class="btn out hidden" type="button" id="anKeyRemove" style="flex:none">తీసివేయండి (Remove)</button></div>
+          <div class="row"><button class="btn" type="submit">Save key</button>
+            <button class="btn out hidden" type="button" id="anKeyRemove" style="flex:none">Remove</button></div>
         </form>
       </section>
 
       <section class="card">
-        <h2 style="margin-top:0">🤖 ఆటో న్యూస్ సెట్టింగ్స్ (Auto News settings)</h2>
-        <p class="help">ప్రభుత్వ ప్రెస్ నోట్లు, అధికారిక హెచ్చరికల నుంచి కొత్త వార్తలను సర్వర్ వెతికి, Claude తో MAVY శైలిలో రాసి, మీ ఆమోదం కోసం ఉంచుతుంది. (The server finds new items from official sources, Claude writes them in MAVY style, and they wait for your approval.)</p>
-        <label class="check"><input type="checkbox" id="anEnabled"> ఆటో న్యూస్ ఆన్ (Auto News ON)</label>
-        <label class="check"><input type="checkbox" id="anTest"> టెస్ట్ మోడ్ — వార్తలు అడ్మిన్‌కు మాత్రమే కనిపిస్తాయి (Test mode — posts visible only to admins)</label>
+        <h2 style="margin-top:0">🤖 Auto News settings</h2>
+        <p class="help">The server finds new items from official sources, Claude writes them in MAVY style, and they wait for your approval.</p>
+        <label class="check"><input type="checkbox" id="anEnabled"> Auto News ON</label>
+        <label class="check"><input type="checkbox" id="anTest"> Test mode — posts visible only to admins</label>
         <div class="grid2">
-          <div><label>ఎంత తరచుగా చూడాలి (Check every)</label>
+          <div><label>Check every</label>
             <select id="anInterval">
-              <option value="15">15 నిమిషాలు (15 min)</option><option value="30">30 నిమిషాలు (30 min)</option>
-              <option value="60">1 గంట (1 hour)</option><option value="120">2 గంటలు (2 hours)</option>
-              <option value="180">3 గంటలు (3 hours)</option><option value="360">6 గంటలు (6 hours)</option>
+              <option value="15">15 minutes</option><option value="30">30 minutes</option>
+              <option value="60">1 hour</option><option value="120">2 hours</option>
+              <option value="180">3 hours</option><option value="360">6 hours</option>
             </select></div>
-          <div><label>రోజువారీ ఖర్చు పరిమితి ₹ (Daily cost limit, rupees) <small>— చేరితే ఆ రోజుకు ఆగుతుంది (stops for the day)</small></label>
+          <div><label>Daily cost limit (₹) <small>— stops for the day</small></label>
             <input type="text" id="anLimit" inputmode="numeric" maxlength="5"></div>
         </div>
         <div id="anMsg"></div>
-        <button class="btn" type="button" id="anSave" style="width:100%;margin-top:14px">సేవ్ చేయండి (Save settings)</button>
+        <button class="btn" type="button" id="anSave" style="width:100%;margin-top:14px">Save settings</button>
       </section>
 
       <section class="card">
-        <h2 style="margin-top:0">ఈ రోజు (Today)</h2>
+        <h2 style="margin-top:0">Today</h2>
         <div class="stats" style="margin-bottom:8px">
-          <div class="stat"><b id="anFound">–</b><span>దొరికినవి<br>Items found</span></div>
-          <div class="stat"><b id="anNew">–</b><span>కొత్తవి<br>New</span></div>
-          <div class="stat"><b id="anDup">–</b><span>డూప్లికేట్<br>Duplicates</span></div>
-          <div class="stat"><b id="anTips">–</b><span>టిప్స్<br>Tips</span></div>
+          <div class="stat"><b id="anFound">–</b><span>Items found</span></div>
+          <div class="stat"><b id="anNew">–</b><span>New</span></div>
+          <div class="stat"><b id="anDup">–</b><span>Duplicates</span></div>
+          <div class="stat"><b id="anTips">–</b><span>Tips</span></div>
         </div>
-        <p class="help">Auto News ఆన్‌లో ఉంటే సర్వర్ ప్రతి కొన్ని నిమిషాలకు మూలాలను చూస్తుంది. ఇప్పుడే చూడాలంటే కింది బటన్ నొక్కండి — ఇది ఉచితం (Claude ఇంకా వాడటం లేదు). (While Auto News is ON the server checks on its own. Press the button to check right now — free, Claude is not used yet.)</p>
-        <button class="btn" type="button" id="anCheck" style="width:100%">🔄 ఇప్పుడే చూడండి (Check now)</button>
+        <p class="help">While Auto News is ON the server checks on its own. Press the button to check right now — free, Claude is not used yet.</p>
+        <button class="btn" type="button" id="anCheck" style="width:100%">🔄 Check now</button>
         <div id="anCheckMsg"></div>
       </section>
 
       <section class="card">
-        <div class="row"><h2 style="margin:0">దొరికిన వార్తలు (Collected items)</h2>
+        <div class="row"><h2 style="margin:0">Collected items</h2>
           <select id="anItemStatus" style="flex:none;width:auto">
-            <option value="">అన్నీ (All)</option><option value="NEW">కొత్తవి (New)</option>
-            <option value="DUPLICATE">డూప్లికేట్ (Duplicates)</option><option value="TIP">టిప్స్ (Tips)</option>
+            <option value="">All</option><option value="NEW">New</option>
+            <option value="DUPLICATE">Duplicates</option><option value="TIP">Tips</option>
           </select></div>
         <div id="anItems" style="margin-top:10px"></div>
       </section>
 
       <section class="card">
-        <h2 style="margin-top:0">లాగ్ (Check log)</h2>
+        <h2 style="margin-top:0">Check log</h2>
         <div id="anRuns"></div>
       </section>
 
       <section class="card">
-        <h2 style="margin-top:0">వార్తా మూలాలు (Sources)</h2>
+        <h2 style="margin-top:0">Sources</h2>
         <div id="anSrcMsg"></div>
         <div id="anSources"></div>
       </section>
 
       <form id="anAdd" class="card" autocomplete="off">
-        <h2 style="margin-top:0">కొత్త మూలం జోడించండి (Add a source)</h2>
-        <p class="help">ఈనాడు, సాక్షి, TV9, Way2News వంటి ఇతర ఛానెళ్లు "టిప్ మాత్రమే" — హెడ్‌లైన్ + లింక్ మీకు చూపిస్తాం, వార్తను కాపీ చేయం. (Other news channels are saved as "tip only": headline + link for you, never copied.)</p>
-        <label>పేరు (Name) *</label><input type="text" id="anName" maxlength="120" required placeholder="ఉదా: అనంతపురం కలెక్టరేట్ ప్రెస్ నోట్లు">
-        <label>వెబ్ చిరునామా (Web address) *</label><input type="text" id="anUrl" maxlength="500" required placeholder="https://…" inputmode="url">
-        <label>రకం (Type) *</label>
+        <h2 style="margin-top:0">Add a source</h2>
+        <p class="help">Other news channels (Eenadu, Sakshi, TV9, Way2News …) are saved as "tip only": you see the headline + link, the story is never copied.</p>
+        <label>Name *</label><input type="text" id="anName" maxlength="120" required placeholder="e.g. Anantapur Collectorate press notes">
+        <label>Web address *</label><input type="text" id="anUrl" maxlength="500" required placeholder="https://…" inputmode="url">
+        <label>Type *</label>
         <select id="anKind">
-          <option value="PRESS_RELEASE">ప్రభుత్వ ప్రెస్ నోట్లు (Government press releases)</option>
-          <option value="OFFICIAL_ALERT">అధికారిక హెచ్చరికలు — IMD, APSDMA (Official alerts)</option>
-          <option value="RSS">RSS ఫీడ్ — అనుమతి ఉన్న సైట్లు మాత్రమే (RSS feed, only sites that allow it)</option>
-          <option value="TIP_ONLY">టిప్ మాత్రమే — ఇతర ఛానెళ్లు (Tip only — other news channels)</option>
+          <option value="PRESS_RELEASE">Government press releases</option>
+          <option value="OFFICIAL_ALERT">Official alerts — IMD, APSDMA</option>
+          <option value="RSS">RSS feed — only sites that allow it</option>
+          <option value="TIP_ONLY">Tip only — other news channels</option>
         </select>
-        <label class="check"><input type="checkbox" id="anPhotos"> ఈ సైట్ ఫోటోలు వాడవచ్చు — ప్రభుత్వ సైట్లు మాత్రమే (Photos may be used — government sites only)</label>
-        <label>నోట్ (Note) <small>— ఐచ్ఛికం</small></label><input type="text" id="anNote" maxlength="300">
+        <label class="check"><input type="checkbox" id="anPhotos"> Photos may be used — government sites only</label>
+        <label>Note <small>— optional</small></label><input type="text" id="anNote" maxlength="300">
         <div id="anAddMsg"></div>
-        <button class="btn" type="submit" style="width:100%;margin-top:14px">జోడించండి (Add source)</button>
+        <button class="btn" type="submit" style="width:100%;margin-top:14px">Add source</button>
       </form>
     </section>
   </section>
