@@ -116,6 +116,7 @@ a.tel{color:var(--navy);font-weight:700}
       <button data-tab="apps">🪪 దరఖాస్తులు</button>
       <button data-tab="people">🏅 జర్నలిస్టులు</button>
       <button data-tab="subs" id="tabSubs" class="hidden">👥 సబ్-అడ్మిన్లు</button>
+      <button data-tab="quick">✨ త్వరిత వార్త</button>
       <button data-tab="auto" id="tabAuto" class="hidden">🤖 ఆటో న్యూస్</button>
     </div>
 
@@ -191,12 +192,56 @@ a.tel{color:var(--navy);font-weight:700}
       </section>
     </section>
 
+    <!-- QUICK NEWS (admins + sub-admins) -->
+    <section id="quick" class="hidden">
+      <form id="qForm" class="card" autocomplete="off">
+        <h2 style="margin-top:0">✨ త్వరిత వార్త (Quick news from WhatsApp)</h2>
+        <p class="help">వాట్సాప్ మెసేజ్‌ను కాపీ చేసి ఇక్కడ పేస్ట్ చేయండి, లేదా ప్రెస్ నోట్ ఫోటో జోడించండి. Claude తెలుగు, ఇంగ్లీష్ వార్త రాస్తుంది — మీరు ఆమోదించే వరకు ఎవరికీ కనిపించదు. (Paste the WhatsApp message or add a photo of the press note. Claude writes Telugu + English; nobody sees it until you approve.)</p>
+        <div id="qUsage" class="meta"></div>
+        <label>మెసేజ్ (Message text)</label>
+        <textarea id="qText" maxlength="6000" placeholder="వాట్సాప్ మెసేజ్ ఇక్కడ పేస్ట్ చేయండి… (paste here)"></textarea>
+        <label>ఇది ఎవరి నుంచి వచ్చింది? (Where is it from?) *</label>
+        <select id="qKind">
+          <option value="OFFICIAL">అధికారిక ప్రెస్ నోట్ — కలెక్టర్/I&PR/పోలీస్ (Official press note)</option>
+          <option value="REPORTER">మా రిపోర్టర్ (Our reporter)</option>
+          <option value="UNVERIFIED">తెలియని ఫార్వర్డ్ — ధృవీకరించాలి (Unverified forward)</option>
+        </select>
+        <label>మూలం పేరు (Source name) * <small>— వార్త కింద "మూలం:" గా కనిపిస్తుంది (shown as "Source:")</small></label>
+        <input type="text" id="qSource" list="qSources" maxlength="120" required placeholder="ఉదా: I&PR అనంతపురం">
+        <datalist id="qSources">
+          <option value="I&PR Anantapur"><option value="Anantapur Collectorate PRO"><option value="Sri Sathya Sai Collectorate PRO">
+          <option value="Anantapur District Police"><option value="Sri Sathya Sai District Police"><option value="DMHO Anantapur">
+          <option value="MAVY NEWS reporter"><option value="WhatsApp group forward">
+        </datalist>
+        <label>లింక్ (Source link) <small>— ఉంటే మాత్రమే (only if there is one)</small></label>
+        <input type="text" id="qUrl" maxlength="500" inputmode="url" placeholder="https://…">
+        <label>ఫోటోలు (Photos, up to 4) <small>— ప్రెస్ నోట్ ఫోటో అయినా సరే (a photo of the press note is fine)</small></label>
+        <input type="file" id="qPhotos" accept="image/*" multiple>
+        <label class="check"><input type="checkbox" id="qUsePhoto"> మొదటి ఫోటోను వార్తలో వాడండి (Use the first photo in the story) <small>— అధికారిక/మా ఫోటోలు మాత్రమే</small></label>
+        <div id="qMsg"></div>
+        <button class="btn" type="submit" id="qGo" style="width:100%;margin-top:14px">✨ వార్త రాయించండి (Make news)</button>
+      </form>
+      <section id="qResult" class="card hidden"></section>
+    </section>
+
     <!-- AUTO NEWS (master admin only) -->
     <section id="auto" class="hidden">
       <section class="card">
+        <h2 style="margin-top:0">🔑 Claude API కీ (Claude API key)</h2>
+        <div id="anKeyState"></div>
+        <form id="anKeyForm" autocomplete="off">
+          <label>కీ ఇక్కడ పేస్ట్ చేయండి (Paste the key here) <small>— sk-ant- తో మొదలవుతుంది (starts with sk-ant-)</small></label>
+          <input type="password" id="anKeyInput" autocomplete="off" spellcheck="false" maxlength="400" placeholder="sk-ant-…">
+          <p class="help">కీ సర్వర్‌లో రహస్యంగా (ఎన్‌క్రిప్ట్ చేసి) దాచబడుతుంది. యాప్‌లో గానీ, ఈ పేజీలో గానీ మళ్లీ కనిపించదు — చివరి 4 అక్షరాలు మాత్రమే. (The key is stored encrypted on the server only. It is never shown again or sent to the app — only its last 4 characters.)</p>
+          <div id="anKeyMsg"></div>
+          <div class="row"><button class="btn" type="submit">కీ సేవ్ చేయండి (Save key)</button>
+            <button class="btn out hidden" type="button" id="anKeyRemove" style="flex:none">తీసివేయండి (Remove)</button></div>
+        </form>
+      </section>
+
+      <section class="card">
         <h2 style="margin-top:0">🤖 ఆటో న్యూస్ సెట్టింగ్స్ (Auto News settings)</h2>
         <p class="help">ప్రభుత్వ ప్రెస్ నోట్లు, అధికారిక హెచ్చరికల నుంచి కొత్త వార్తలను సర్వర్ వెతికి, Claude తో MAVY శైలిలో రాసి, మీ ఆమోదం కోసం ఉంచుతుంది. (The server finds new items from official sources, Claude writes them in MAVY style, and they wait for your approval.)</p>
-        <div id="anKey"></div>
         <label class="check"><input type="checkbox" id="anEnabled"> ఆటో న్యూస్ ఆన్ (Auto News ON)</label>
         <label class="check"><input type="checkbox" id="anTest"> టెస్ట్ మోడ్ — వార్తలు అడ్మిన్‌కు మాత్రమే కనిపిస్తాయి (Test mode — posts visible only to admins)</label>
         <div class="grid2">

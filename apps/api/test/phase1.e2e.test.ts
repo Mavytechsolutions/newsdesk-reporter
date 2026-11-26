@@ -75,7 +75,7 @@ describe('Health & reference data', () => {
   });
   it('lists categories in Telugu and English', async () => {
     const r = await http.get(api('/categories')).expect(200);
-    expect(r.body).toHaveLength(16);
+    expect(r.body).toHaveLength(19);
     expect(r.body.find((c: any) => c.slug === 'agriculture').nameTe).toBe('వ్యవసాయం');
   });
   it('browses the location tree and searches in Telugu', async () => {

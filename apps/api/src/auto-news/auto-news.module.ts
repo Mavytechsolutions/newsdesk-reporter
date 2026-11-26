@@ -9,6 +9,8 @@
  *   POST   /admin/auto-news/check-now          { sourceId? }  check sources straight away (works even while Auto News is OFF)
  *   GET    /admin/auto-news/items?status=&limit=  collected items (newest first)
  *   GET    /admin/auto-news/runs?limit=         the check log
+ *   PUT    /admin/auto-news/api-key            { key }  check the Claude key with Anthropic, then save it encrypted
+ *   DELETE /admin/auto-news/api-key            remove the saved key
  *
  * Safety rules enforced here (not only in the page):
  *  - Other news channels / apps (Eenadu, Sakshi, TV9, Way2News …) can only be "tip only" sources:
@@ -21,7 +23,7 @@
  */
 import {
   BadRequestException, Body, ConflictException, Controller, Delete, Get, HttpCode, Injectable, Module, NotFoundException,
-  Param, ParseUUIDPipe, Patch, Post, Query, ServiceUnavailableException,
+  Param, ParseUUIDPipe, Patch, Post, Put, Query, ServiceUnavailableException,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { Type } from 'class-transformer';
@@ -30,6 +32,8 @@ import { and, asc, desc, eq, gte, sql } from 'drizzle-orm';
 import { Db, InjectDb } from '../db/db.module';
 import { autoNewsItems, autoNewsRuns, autoNewsSettings, autoNewsSources } from '../db/schema';
 import { AutoNewsRunner } from './runner.service';
+import { ClaudeService, startOfTodayIST } from './claude.service';
+import { QuickNewsController, QuickNewsService } from './quick-news';
 import { AuthUser, ClientIp, CurrentUser, Roles } from '../common/auth.decorators';
 import { AuditService } from '../audit/audit.module';
 
@@ -80,6 +84,7 @@ class EditSourceDto {
 }
 
 class CheckDto { @IsOptional() @IsUUID() sourceId?: string; }
+class KeyDto { @IsString() @MinLength(20) @MaxLength(400) key: string; }
 class ItemsDto {
   @IsOptional() @IsIn(['NEW', 'DUPLICATE', 'TIP', 'SKIPPED']) status?: 'NEW' | 'DUPLICATE' | 'TIP' | 'SKIPPED';
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(200) limit?: number;
@@ -90,7 +95,7 @@ type SourceRow = typeof autoNewsSources.$inferSelect;
 
 @Injectable()
 export class AutoNewsService {
-  constructor(@InjectDb() private db: Db, private audit: AuditService) {}
+  constructor(@InjectDb() private db: Db, private audit: AuditService, private claude: ClaudeService) {}
 
   async settings() {
     const [row] = await this.db.select().from(autoNewsSettings).where(eq(autoNewsSettings.id, 1));
@@ -99,7 +104,6 @@ export class AutoNewsService {
     return created ?? (await this.db.select().from(autoNewsSettings).where(eq(autoNewsSettings.id, 1)))[0];
   }
   sources() { return this.db.select().from(autoNewsSources).orderBy(asc(autoNewsSources.createdAt)); }
-  keyConfigured() { return !!(process.env.ANTHROPIC_API_KEY || '').trim(); }
 
   view(s: Awaited<ReturnType<AutoNewsService['settings']>>) {
     return {
@@ -116,8 +120,11 @@ export class AutoNewsService {
   }
 
   async overview() {
-    const [s, src, today] = await Promise.all([this.settings(), this.sources(), this.today()]);
-    return { settings: this.view(s), sources: src.map((r) => this.sourceView(r)), keyConfigured: this.keyConfigured(), today };
+    const [s, src, today, key, spent] = await Promise.all([this.settings(), this.sources(), this.today(), this.claude.keyInfo(), this.claude.spentTodayPaise()]);
+    return {
+      settings: this.view(s), sources: src.map((r) => this.sourceView(r)), today: { ...today, spentInr: spent / 100 },
+      keyConfigured: key.configured, key: { where: key.where, last4: key.last4, updatedAt: key.updatedAt },
+    };
   }
 
   /** Today (India time): how many items were found, and of what kind. */
@@ -215,15 +222,10 @@ export class AutoNewsService {
   }
 }
 
-export function startOfTodayIST(): Date {
-  const ist = new Date(Date.now() + 5.5 * 3600_000);
-  return new Date(Date.UTC(ist.getUTCFullYear(), ist.getUTCMonth(), ist.getUTCDate()) - 5.5 * 3600_000);
-}
-
 @Controller('admin/auto-news')
 @Roles('SUPER_ADMIN')
 export class AutoNewsController {
-  constructor(private svc: AutoNewsService, private runner: AutoNewsRunner, private audit: AuditService) {}
+  constructor(private svc: AutoNewsService, private runner: AutoNewsRunner, private audit: AuditService, private claude: ClaudeService) {}
 
   @Post('check-now') @HttpCode(200) @Throttle({ default: { limit: 20, ttl: 60_000 } })
   async checkNow(@Body() dto: CheckDto, @CurrentUser() user: AuthUser, @ClientIp() ip: string) {
@@ -235,6 +237,12 @@ export class AutoNewsController {
   }
 
   @Get('items') items(@Query() dto: ItemsDto) { return this.svc.items(dto); }
+
+  @Put('api-key') @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  saveKey(@Body() dto: KeyDto, @CurrentUser() user: AuthUser, @ClientIp() ip: string) { return this.claude.saveKey(dto.key, user.id, ip); }
+
+  @Delete('api-key')
+  removeKey(@CurrentUser() user: AuthUser, @ClientIp() ip: string) { return this.claude.removeKey(user.id, ip); }
   @Get('runs') runs(@Query() dto: RunsDto) { return this.svc.runs(dto); }
 
   @Get() overview() { return this.svc.overview(); }
@@ -254,5 +262,9 @@ export class AutoNewsController {
   remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser, @ClientIp() ip: string) { return this.svc.removeSource(id, user, ip); }
 }
 
-@Module({ controllers: [AutoNewsController], providers: [AutoNewsService, AutoNewsRunner], exports: [AutoNewsService, AutoNewsRunner] })
+@Module({
+  controllers: [AutoNewsController, QuickNewsController],
+  providers: [AutoNewsService, AutoNewsRunner, ClaudeService, QuickNewsService],
+  exports: [AutoNewsService, AutoNewsRunner, ClaudeService],
+})
 export class AutoNewsModule {}

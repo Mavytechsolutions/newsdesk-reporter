@@ -107,6 +107,8 @@ const TREE: Node[] = [
   { en: 'Telangana', te: 'తెలంగాణ', type: 'STATE', children: TELANGANA },
 ];
 
+export const DESK_EMAIL = 'desk@mavynews.in';
+
 const CATEGORIES: [string, string, string, boolean][] = [
   ['for-you', 'For You', 'మీ కోసం', true],
   ['breaking', 'Breaking', 'బ్రేకింగ్', true],
@@ -123,6 +125,9 @@ const CATEGORIES: [string, string, string, boolean][] = [
   ['health', 'Health', 'ఆరోగ్యం', false],
   ['education', 'Education', 'విద్య', false],
   ['agriculture', 'Agriculture', 'వ్యవసాయం', false],
+  ['weather', 'Weather', 'వాతావరణం', false],
+  ['jobs', 'Jobs', 'ఉద్యోగాలు', false],
+  ['general', 'General', 'సాధారణ వార్తలు', false],
   ['local', 'Local News', 'స్థానిక వార్తలు', true],
 ];
 
@@ -172,6 +177,13 @@ export async function seed(db = drizzle(new Pool({ connectionString: config.data
   if (!admin.username && username) {
     const [taken] = await db.select({ id: s.users.id }).from(s.users).where(eq(s.users.username, username));
     if (!taken) await db.update(s.users).set({ username }).where(eq(s.users.id, admin.id));
+  }
+  // "MAVY Desk": the byline of posts written with Claude (Auto News / Quick convert). It has no password and cannot log in.
+  const [desk] = await db.select({ id: s.users.id }).from(s.users).where(eq(s.users.email, DESK_EMAIL));
+  if (!desk) {
+    const [d] = await db.insert(s.users).values({ email: DESK_EMAIL, name: 'MAVY Desk', role: 'REPORTER' }).returning();
+    await db.insert(s.staffProfiles).values({ userId: d.id, designation: 'MAVY Desk (Auto News)', verified: true });
+    console.log('✔ MAVY Desk byline created');
   }
   const recovery = process.env.ADMIN_RECOVERY_PHONE?.replace(/\D/g, '').slice(-10);
   if (!admin.recoveryPhone && recovery && /^[6-9]\d{9}$/.test(recovery))

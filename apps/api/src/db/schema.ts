@@ -410,3 +410,37 @@ export const autoNewsRuns = pgTable('auto_news_runs', {
   startedAt: ts('started_at').notNull().defaultNow(),
   finishedAt: ts('finished_at'),
 }, (t) => ({ startedIdx: index('auto_news_runs_started_idx').on(t.startedAt) }));
+
+// ---------- Auto News (Step 3: Claude key + post log / cost) ----------
+/** Secrets saved from the admin page, encrypted with a key derived from the server's own secret. Never sent to any page or app. */
+export const autoNewsSecrets = pgTable('auto_news_secrets', {
+  name: text('name').primaryKey(),
+  ciphertext: text('ciphertext').notNull(),
+  iv: text('iv').notNull(),
+  tag: text('tag').notNull(),
+  last4: text('last4').notNull(),
+  updatedBy: uuid('updated_by').references(() => users.id),
+  updatedAt: ts('updated_at').notNull().defaultNow(),
+});
+
+/** One row per Claude call: where the post came from, what Claude was given, and what it cost. */
+export const autoNewsPosts = pgTable('auto_news_posts', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  articleId: uuid('article_id').references(() => articles.id, { onDelete: 'set null' }),
+  itemId: uuid('item_id').references(() => autoNewsItems.id, { onDelete: 'set null' }),
+  origin: text('origin').notNull(), // 'quick' (pasted by an editor) | 'auto' (from a source)
+  sourceKind: text('source_kind').notNull(), // OFFICIAL | REPORTER | UNVERIFIED | ALERT …
+  sourceName: text('source_name').notNull(),
+  sourceUrl: text('source_url'),
+  inputText: text('input_text'),
+  photoCount: integer('photo_count').notNull().default(0),
+  model: text('model').notNull(),
+  inputTokens: integer('input_tokens').notNull().default(0),
+  outputTokens: integer('output_tokens').notNull().default(0),
+  costPaise: integer('cost_paise').notNull().default(0),
+  needsVerification: boolean('needs_verification').notNull().default(false),
+  notes: text('notes'),
+  error: text('error'),
+  actorId: uuid('actor_id').references(() => users.id),
+  createdAt: ts('created_at').notNull().defaultNow(),
+}, (t) => ({ createdIdx: index('auto_news_posts_created_idx').on(t.createdAt) }));

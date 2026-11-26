@@ -103,9 +103,9 @@
     if ((tab === 'subs' || tab === 'auto') && (!state.me || state.me.role !== 'SUPER_ADMIN')) tab = 'review';
     state.tab = tab;
     Array.prototype.forEach.call(document.querySelectorAll('.tabs button'), function (b) { b.classList.toggle('on', b.getAttribute('data-tab') === tab); });
-    ['review', 'apps', 'people', 'subs', 'auto'].forEach(function (id) { show(id, id === tab); });
+    ['review', 'apps', 'people', 'subs', 'auto', 'quick'].forEach(function (id) { show(id, id === tab); });
     state.objectUrls.forEach(function (u) { URL.revokeObjectURL(u); }); state.objectUrls = [];
-    ({ review: loadReview, apps: loadApps, people: loadPeople, subs: loadSubs, auto: loadAuto })[tab]();
+    ({ review: loadReview, apps: loadApps, people: loadPeople, subs: loadSubs, auto: loadAuto, quick: loadQuick })[tab]();
     window.scrollTo(0, 0);
   }
 
@@ -335,10 +335,11 @@
       var s = r.settings;
       $('anEnabled').checked = s.enabled; $('anTest').checked = s.testMode;
       $('anInterval').value = String(s.intervalMinutes); $('anLimit').value = String(s.dailyCostLimitInr);
-      var key = $('anKey'); key.innerHTML = '';
-      key.appendChild(h('div', { class: 'msg ' + (r.keyConfigured ? 'ok' : 'err'), text: r.keyConfigured
-        ? '🔑 Claude API కీ సర్వర్‌లో ఉంది (Claude API key is set on the server — it is never shown here).'
-        : '🔑 Claude API కీ ఇంకా సర్వర్‌లో లేదు. స్టెప్ 3 లో జోడిస్తాం. (Claude API key not set on the server yet — we add it in Step 3.)' }));
+      var ks = $('anKeyState'); ks.innerHTML = '';
+      ks.appendChild(h('div', { class: 'msg ' + (r.keyConfigured ? 'ok' : 'err'), text: r.keyConfigured
+        ? '✔ కీ సేవ్ అయింది — చివరి 4 అక్షరాలు …' + r.key.last4 + (r.key.where === 'server' ? ' (server setting)' : '') + ' · ఈ రోజు ఖర్చు ₹' + r.today.spentInr.toFixed(2) + ' / ₹' + r.settings.dailyCostLimitInr
+        : '✖ కీ ఇంకా లేదు (No key yet). platform.claude.com → API Keys → Create Key, ఆపై ఇక్కడ పేస్ట్ చేయండి.' }));
+      show('anKeyRemove', r.keyConfigured && r.key.where === 'saved');
       renderSources(r.sources);
       $('anFound').textContent = r.today.found; $('anNew').textContent = r.today.new;
       $('anDup').textContent = r.today.duplicates; $('anTips').textContent = r.today.tips;
@@ -439,4 +440,140 @@
     }).catch(function (e) { msg('anCheckMsg', e.message); })
       .then(function () { b.disabled = false; b.textContent = '🔄 ఇప్పుడే చూడండి (Check now)'; });
   });
+
+  // ---------- Claude key (master admin) ----------
+  $('anKeyForm').addEventListener('submit', function (e) {
+    e.preventDefault(); msg('anKeyMsg', '');
+    var k = $('anKeyInput').value.trim();
+    if (!k) { msg('anKeyMsg', 'కీ పేస్ట్ చేయండి (Paste the key)'); return; }
+    msg('anKeyMsg', '⏳ Claude తో కీ సరిచూస్తున్నాం… (Checking the key with Claude…)', true);
+    call('PUT', '/admin/auto-news/api-key', { key: k }).then(function (r) {
+      $('anKeyInput').value = '';
+      msg('anKeyMsg', '✔ కీ పని చేస్తోంది, సేవ్ అయింది (Key works and is saved) — …' + r.last4, true); loadAuto();
+    }).catch(function (err) { $('anKeyInput').value = ''; msg('anKeyMsg', err.message); });
+  });
+  $('anKeyRemove').addEventListener('click', function () {
+    if (!confirm('Claude కీని తీసివేయాలా? ఆ తర్వాత త్వరిత వార్త పని చేయదు. (Remove the Claude key? Quick news will stop working.)')) return;
+    call('DELETE', '/admin/auto-news/api-key').then(function () { msg('anKeyMsg', '✔ తీసివేశాం (Removed)', true); loadAuto(); }, function (e) { msg('anKeyMsg', e.message); });
+  });
+
+  // ---------- 6. Quick news (paste from WhatsApp → Claude → waiting for approval) ----------
+  function upload(path, form, retried) {
+    var t = tokens();
+    return fetch(API + path, { method: 'POST', headers: t ? { Authorization: 'Bearer ' + t.accessToken } : {}, body: form }).then(function (res) {
+      if (res.status === 401 && t && !retried) return refresh().then(function () { return upload(path, form, true); }, function () { throw expired(); });
+      return res.json().catch(function () { return null; }).then(function (data) {
+        if (!res.ok) { var m = data && data.message; throw new Error(Array.isArray(m) ? m.join(', ') : (m || 'Error ' + res.status)); }
+        return data;
+      });
+    }, function () { throw new Error('ఇంటర్నెట్ / సర్వర్ అందుబాటులో లేదు (No connection)'); });
+  }
+  function loadQuick() {
+    msg('qMsg', '');
+    call('GET', '/admin/quick-news/usage').then(function (u) {
+      $('qUsage').textContent = u.keyConfigured
+        ? '💰 ఈ రోజు ఖర్చు (Today): ₹' + u.spentTodayInr.toFixed(2) + ' / ₹' + u.limitInr + ' · ఒక్కో వార్తకు సుమారు ₹1.5–2 (about ₹1.5–2 per post)'
+        : '🔑 Claude కీ ఇంకా సేవ్ కాలేదు — మాస్టర్ అడ్మిన్ "ఆటో న్యూస్" ట్యాబ్‌లో జోడించాలి. (Claude key not set yet — the master admin adds it in the Auto News tab.)';
+    }).catch(function () {});
+  }
+  function syncPhotoBox() {
+    var unverified = $('qKind').value === 'UNVERIFIED';
+    $('qUsePhoto').disabled = unverified; if (unverified) $('qUsePhoto').checked = false;
+  }
+  $('qKind').addEventListener('change', function () {
+    syncPhotoBox();
+    if ($('qKind').value === 'UNVERIFIED' && !$('qSource').value.trim()) $('qSource').value = 'WhatsApp group forward';
+  });
+  $('qForm').addEventListener('submit', function (e) {
+    e.preventDefault(); msg('qMsg', '');
+    var files = $('qPhotos').files;
+    if (!$('qText').value.trim() && !files.length) { msg('qMsg', 'మెసేజ్ పేస్ట్ చేయండి లేదా ఫోటో జోడించండి (Paste the text or add a photo)'); return; }
+    if (files.length > 4) { msg('qMsg', '4 ఫోటోల వరకు మాత్రమే (Up to 4 photos)'); return; }
+    var f = new FormData();
+    f.append('text', $('qText').value); f.append('sourceKind', $('qKind').value); f.append('sourceName', $('qSource').value.trim());
+    if ($('qUrl').value.trim()) f.append('sourceUrl', $('qUrl').value.trim());
+    f.append('usePhoto', $('qUsePhoto').checked ? 'true' : 'false');
+    var b = $('qGo'); b.disabled = true; b.textContent = '⏳ Claude రాస్తోంది… (Writing — about 10–30 seconds)';
+    show('qResult', false);
+    Promise.all(Array.prototype.map.call(files, shrink)).then(function (blobs) {
+      blobs.forEach(function (bl, i) { f.append('photos', bl, 'photo' + (i + 1) + '.jpg'); });
+      return upload('/admin/quick-news', f);
+    }).then(function (r) {
+      if (r.notNews) { msg('qMsg', 'ℹ ఇది వార్త కాదని Claude చెప్పింది — పోస్ట్ చేయలేదు. (Claude says this is not news — no post made.) ఖర్చు ₹' + r.costInr.toFixed(2)); return; }
+      $('qText').value = ''; $('qUrl').value = ''; $('qPhotos').value = ''; $('qUsePhoto').checked = false;
+      showDraft(r);
+    }).catch(function (err) { msg('qMsg', err.message); })
+      .then(function () { b.disabled = false; b.textContent = '✨ వార్త రాయించండి (Make news)'; loadQuick(); counts(); });
+  });
+  /** Make a phone photo small (longest side 1600 px, JPEG) before sending: faster, and under the 12 MB upload limit. */
+  function shrink(file) {
+    if (!window.createImageBitmap || !/^image\//.test(file.type)) return Promise.resolve(file);
+    return createImageBitmap(file).then(function (img) {
+      var k = Math.min(1, 1600 / Math.max(img.width, img.height));
+      var c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      return new Promise(function (res) { c.toBlob(function (b) { res(b || file); }, 'image/jpeg', 0.85); });
+    }).catch(function () { return file; });
+  }
+  function words(s) { return s.trim().split(/\s+/).filter(Boolean).length; }
+  function clip(s, n) { var w = s.trim().split(/\s+/); return w.length <= n ? s.trim() : w.slice(0, n).join(' ') + '…'; }
+  function showDraft(r) {
+    var box = $('qResult'); box.innerHTML = ''; show('qResult', true);
+    var teH = h('input', { type: 'text', maxlength: '160' }); teH.value = r.te.headline;
+    var teS = h('textarea', { maxlength: '2000' }); teS.value = r.te.story;
+    var enH = h('input', { type: 'text', maxlength: '160' }); enH.value = r.en.headline;
+    var enS = h('textarea', { maxlength: '2000' }); enS.value = r.en.story;
+    var cnt = function (ta) { var c = h('div', { class: 'count' }); var upd = function () { c.textContent = words(ta.value) + ' పదాలు (words)'; }; ta.addEventListener('input', upd); upd(); return c; };
+    var resMsg = h('div');
+    var flags = [];
+    if (r.needsVerification) flags.push(h('div', { class: 'msg err', text: '⚠ ధృవీకరించాలి (Needs verification): ' + (r.verificationReason || '') + ' — ఆమోదించే ముందు ఫోన్ చేసి సరిచూడండి. (Check by phone before approving.)' }));
+    if (r.missingInfo) flags.push(h('div', { class: 'msg err', style: 'background:#FFF6E0;color:#7A4D00', text: 'ℹ స్పష్టంగా లేనివి (Unclear / missing): ' + r.missingInfo }));
+    (r.notes || []).filter(function (n) { return !/^NEEDS VERIFICATION|^Missing/.test(n); }).forEach(function (n) { flags.push(h('div', { class: 'msg err', style: 'background:#FFF6E0;color:#7A4D00', text: '📍 ' + n })); });
+    function editedTranslations() {
+      return [
+        { language: 'te', headline: teH.value.trim(), summary: clip(teS.value, 100), body: teS.value.trim() },
+        { language: 'en', headline: enH.value.trim(), summary: clip(enS.value, 100), body: enS.value.trim() },
+      ];
+    }
+    function changed() { return teH.value !== r.te.headline || teS.value !== r.te.story || enH.value !== r.en.headline || enS.value !== r.en.story; }
+    function saveEdits() {
+      if (!changed()) return Promise.resolve();
+      var t = editedTranslations();
+      if (t.some(function (x) { return x.headline.length < 5 || x.body.length < 10; })) return Promise.reject(new Error('శీర్షిక, వార్త ఖాళీగా ఉండకూడదు (Headline and story cannot be empty)'));
+      return call('PATCH', '/newsroom/articles/' + r.articleId, { translations: t }).then(function () {
+        r.te = { headline: teH.value, story: teS.value }; r.en = { headline: enH.value, story: enS.value };
+      });
+    }
+    var busy = function (on) { Array.prototype.forEach.call(box.querySelectorAll('button'), function (x) { x.disabled = on; }); };
+    box.appendChild(h('h2', { style: 'margin-top:0', text: '📝 డ్రాఫ్ట్ సిద్ధం — మీ ఆమోదం కోసం (Draft ready — waiting for your approval)' }));
+    box.appendChild(h('div', { class: 'meta', text: '✍ MAVY Desk · 🏷 ' + r.category.nameTe + ' (' + r.category.nameEn + ') · 📍 ' + r.place + ' · మూలం (Source): ' + r.sourceName + ' · ఖర్చు ₹' + r.costInr.toFixed(2) }));
+    flags.forEach(function (f) { box.appendChild(f); });
+    if (r.heroImageUrl) box.appendChild(h('img', { class: 'photo', src: r.heroImageUrl, alt: '' }));
+    box.appendChild(h('label', { text: 'తెలుగు శీర్షిక (Telugu headline)' })); box.appendChild(teH);
+    box.appendChild(h('label', { text: 'తెలుగు వార్త (Telugu story)' })); box.appendChild(teS); box.appendChild(cnt(teS));
+    box.appendChild(h('label', { text: 'English headline' })); box.appendChild(enH);
+    box.appendChild(h('label', { text: 'English story' })); box.appendChild(enS); box.appendChild(cnt(enS));
+    box.appendChild(resMsg);
+    box.appendChild(h('div', { class: 'actions', style: 'margin-top:14px' },
+      h('button', { class: 'btn', type: 'button', text: '✅ ఆమోదించి ప్రచురించండి (Approve & publish)', onclick: function () {
+        if (r.needsVerification && !confirm('ఈ వార్తను ధృవీకరించారా? (Have you verified this news?)')) return;
+        if (!r.placeFound && !confirm('ప్రాంతం దొరకలేదు — ఆంధ్రప్రదేశ్ స్థాయిలో ప్రచురించాలా? (No place found — publish at state level?)')) return;
+        busy(true); msg(resMsg.id = 'qResMsg', '');
+        saveEdits().then(function () { return approveAndPublish({ id: r.articleId, status: 'SUBMITTED' }); })
+          .then(function () { box.innerHTML = ''; box.appendChild(h('div', { class: 'msg ok', text: '✔ ప్రచురించబడింది! యాప్‌లో, www.mavynews.com లో "MAVY Desk" పేరుతో కనిపిస్తుంది. (Published — visible in the app and website as "MAVY Desk".)' })); counts(); })
+          .catch(function (err) { busy(false); msg('qResMsg', err.message); });
+      } }),
+      h('button', { class: 'btn out', type: 'button', text: '💾 మార్పులు సేవ్ (Save edits only)', onclick: function () {
+        busy(true); msg(resMsg.id = 'qResMsg', '');
+        saveEdits().then(function () { busy(false); msg('qResMsg', '✔ సేవ్ అయింది — "వార్తల సమీక్ష" ట్యాబ్‌లో "న్యూస్‌రూమ్ వార్తలు" లో ఉంది. (Saved — it is in the Review tab under Newsroom staff.)', true); })
+          .catch(function (err) { busy(false); msg('qResMsg', err.message); });
+      } }),
+      h('button', { class: 'btn red', type: 'button', text: '✖ తిరస్కరించండి (Reject)', onclick: function () {
+        var why = ask('ఎందుకు తిరస్కరిస్తున్నారు? (Why reject?)'); if (!why) return;
+        busy(true); msg(resMsg.id = 'qResMsg', '');
+        transition(r.articleId, 'reject', why).then(function () { box.innerHTML = ''; box.appendChild(h('div', { class: 'msg ok', text: '✔ తిరస్కరించబడింది (Rejected)' })); counts(); })
+          .catch(function (err) { busy(false); msg('qResMsg', err.message); });
+      } })));
+    box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 })();
