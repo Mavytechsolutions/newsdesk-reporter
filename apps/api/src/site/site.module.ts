@@ -7,7 +7,7 @@
  *   /d/<place slug>   a district / mandal / town, e.g. /d/dist-anantapur
  *   /find?q=          search
  *   /n/<story slug>   one story (WhatsApp / Facebook previews, Google NewsArticle data)
- *   /about /privacy /grievance
+ *   /about /contact /privacy /grievance
  *   /robots.txt /sitemap.xml /news-sitemap.xml
  * Language: ?lang=te|en (remembered in a cookie). Telugu by default.
  */
@@ -158,7 +158,7 @@ function layout(ctx: Ctx, o: { title: string; description: string; body: string;
 <meta name="theme-color" content="#0B1F3A">
 <link rel="icon" href="/site/favicon.png" type="image/png"><link rel="apple-touch-icon" href="/site/apple-touch-icon.png">
 <link rel="preload" href="/site/anek-telugu.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/site/site.css?v=3">
+<link rel="stylesheet" href="/site/site.css?v=4">
 <meta property="og:site_name" content="MAVY NEWS"><meta property="og:type" content="${o.og ?? 'website'}">
 <meta property="og:title" content="${esc(o.title)}"><meta property="og:description" content="${esc(o.description)}"><meta property="og:url" content="${esc(o.canonical)}">
 <meta property="og:locale" content="${ctx.lang === 'te' ? 'te_IN' : 'en_IN'}">
@@ -170,6 +170,7 @@ ${ld}
 <header class="mast"><div class="wrap">
   <a class="brand" href="/" aria-label="MAVY NEWS"><b>MAVY <span>NEWS</span></b><small>${esc(today)}</small></a>
   <nav class="lang" aria-label="${T(ctx, 'భాష', 'Language')}"><a href="${esc(langLink(ctx, 'te'))}" ${ctx.lang === 'te' ? 'aria-current="true"' : ''} lang="te">తెలుగు</a><a href="${esc(langLink(ctx, 'en'))}" ${ctx.lang === 'en' ? 'aria-current="true"' : ''} lang="en">English</a></nav>
+  <a class="contact-link" href="/contact">${T(ctx, 'సంప్రదించండి', 'Contact us')}</a>
   ${config.appDownloadUrl ? `<a class="get-app" href="${esc(config.appDownloadUrl)}">${T(ctx, 'యాప్ డౌన్‌లోడ్', 'Get the app')}</a>` : ''}
 </div></header>
 <nav class="sections" aria-label="${T(ctx, 'విభాగాలు', 'Sections')}"><ul>
@@ -184,7 +185,7 @@ ${o.band ?? ''}
 </div>
 <footer class="foot"><div class="wrap">
   <div><b>MAVY <span>NEWS</span></b><p>${T(ctx, 'అనంతపురం, శ్రీ సత్యసాయి జిల్లాల స్థానిక వార్తలు — తెలుగులో, ఇంగ్లీష్‌లో.', 'Local news from Anantapur and Sri Sathya Sai districts, in Telugu and English.')}</p><small>© ${new Date().getFullYear()} MAVY TECH SOLUTIONS PVT LTD</small></div>
-  <ul><li><a href="/delete-account">${T(ctx, 'ఖాతా తొలగింపు', 'Delete account')}</a></li><li><a href="/about">${T(ctx, 'మా గురించి', 'About us')}</a></li><li><a href="/grievance">${T(ctx, 'ఫిర్యాదులు (గ్రీవెన్స్)', 'Grievances')}</a></li><li><a href="/privacy">${T(ctx, 'గోప్యతా విధానం', 'Privacy policy')}</a></li></ul>
+  <ul><li><a href="/contact">${T(ctx, 'మమ్మల్ని సంప్రదించండి', 'Contact us')}</a></li><li><a href="/delete-account">${T(ctx, 'ఖాతా తొలగింపు', 'Delete account')}</a></li><li><a href="/about">${T(ctx, 'మా గురించి', 'About us')}</a></li><li><a href="/grievance">${T(ctx, 'ఫిర్యాదులు (గ్రీవెన్స్)', 'Grievances')}</a></li><li><a href="/privacy">${T(ctx, 'గోప్యతా విధానం', 'Privacy policy')}</a></li></ul>
   <ul>${config.appDownloadUrl ? `<li><a href="${esc(config.appDownloadUrl)}">${T(ctx, 'యాప్ డౌన్‌లోడ్ (Android)', 'Download the Android app')}</a></li>` : ''}<li><a href="/c/breaking">${T(ctx, 'బ్రేకింగ్ న్యూస్', 'Breaking news')}</a></li><li><a href="/d/dist-anantapur">${T(ctx, 'అనంతపురం వార్తలు', 'Anantapur news')}</a></li><li><a href="/d/dist-sri-sathya-sai">${T(ctx, 'శ్రీ సత్యసాయి వార్తలు', 'Sri Sathya Sai news')}</a></li></ul>
 </div></footer>
 <script src="/site/site.js" defer></script>
@@ -375,6 +376,7 @@ class SiteController {
     const source = a.sourceType === 'CITIZEN'
       ? T(ctx, 'ఈ వార్తను MAVY NEWS సిటిజన్ జర్నలిస్ట్ పంపారు. మా ఎడిటర్లు పరిశీలించిన తర్వాత ప్రచురించాము.', 'Sent by a MAVY NEWS citizen journalist and published after our editors checked it.')
       : `${T(ctx, 'మూలం', 'Source')}: ${esc(a.sourceLabel)}`;
+    const credit = `${T(ctx, 'ప్రచురణకర్త', 'Publisher')}: MAVY NEWS (MAVY TECH SOLUTIONS PVT LTD)${a.reporter ? ` · ${T(ctx, 'రిపోర్టర్', 'Reporter')}: ${esc(a.reporter)}` : ''}`;
     const wa = `https://wa.me/?text=${encodeURIComponent(`${a.headline}\n${url}`)}`;
     const other = a.availableLanguages.find((l) => l !== a.language);
     const body = `<article class="story ${catCls(a.category.slug)}">
@@ -382,7 +384,7 @@ class SiteController {
 <h1>${esc(a.headline)}</h1>${showSummary ? `<p class="sum">${esc(a.summary)}</p>` : ''}${meta(ctx, card)}</div>
 ${img ? `<figure><img src="${esc(img)}" alt="" width="1280" height="720" fetchpriority="high">${a.heroImageCredit ? `<figcaption>${T(ctx, 'ఫోటో', 'Photo')}: ${esc(a.heroImageCredit)}</figcaption>` : ''}</figure>` : ''}
 <div class="text">${paras}</div>
-<p class="source">${source}</p>
+<p class="source">${credit}<br>${source}<br><a href="/contact">${T(ctx, 'ఈ వార్త గురించి మమ్మల్ని సంప్రదించండి', 'Contact us about this story')}</a></p>
 <div class="share"><a class="wa" href="${esc(wa)}" rel="noopener" target="_blank">${T(ctx, 'వాట్సాప్‌లో పంపండి', 'Share on WhatsApp')}</a><button type="button" id="share-btn" data-url="${esc(url)}" data-title="${esc(a.headline)}" data-done="${T(ctx, 'లింక్ కాపీ అయింది', 'Link copied')}">${T(ctx, 'లింక్ షేర్ చేయండి', 'Share link')}</button></div>
 </article>
 ${card.related?.length ? `<div class="sec-head"><h2>${T(ctx, 'ఇలాంటి మరిన్ని వార్తలు', 'More like this')}</h2></div>${list(ctx, card.related)}` : ''}`;
@@ -413,6 +415,20 @@ ${card.related?.length ? `<div class="sec-head"><h2>${T(ctx, 'ఇలాంటి
 <h2>${T(ctx, 'సంప్రదించండి', 'Contact us')}</h2>
 <p>MAVY TECH SOLUTIONS PVT LTD<br>${T(ctx, 'అనంతపురం, ఆంధ్రప్రదేశ్, భారతదేశం', 'Anantapur, Andhra Pradesh, India')}<br>${T(ctx, 'ఈమెయిల్', 'Email')}: <a href="mailto:mavytechsolutions@gmail.com">mavytechsolutions@gmail.com</a><br>${T(ctx, 'వెబ్‌సైట్', 'Website')}: <a href="https://www.mavynews.com">www.mavynews.com</a></p></div>`;
     this.send(res, layout(ctx, { title: T(ctx, 'మా గురించి — MAVY NEWS', 'About — MAVY NEWS'), description: 'About MAVY NEWS', canonical: absolute('/about'), body, side: await this.sideHtml(ctx) }), 200, 3600);
+  }
+
+  @Get('contact')
+  async contact(@Req() req: Request, @Res() res: Response) {
+    const ctx = await this.ctx(req, res);
+    const body = `<div class="doc"><h1>${T(ctx, 'మమ్మల్ని సంప్రదించండి', 'Contact us')}</h1>
+<p>${T(ctx, 'MAVY NEWS యాప్, వెబ్‌సైట్ గురించి ఏదైనా ప్రశ్న, వార్తా సమాచారం, సవరణ లేదా ఫిర్యాదు కోసం మమ్మల్ని సంప్రదించండి.', 'Write to us about the MAVY NEWS app or website, to send a news tip, to ask for a correction, or to make a complaint.')}</p>
+<h2>${T(ctx, 'ఈమెయిల్', 'Email')}</h2>
+<p><a href="mailto:mavytechsolutions@gmail.com">mavytechsolutions@gmail.com</a></p>
+<h2>${T(ctx, 'ప్రచురణకర్త', 'Publisher')}</h2>
+<p>MAVY NEWS — MAVY TECH SOLUTIONS PVT LTD<br>${T(ctx, 'అనంతపురం, ఆంధ్రప్రదేశ్, భారతదేశం', 'Anantapur, Andhra Pradesh, India')}<br>${T(ctx, 'వెబ్‌సైట్', 'Website')}: <a href="https://www.mavynews.com">www.mavynews.com</a></p>
+<h2>${T(ctx, 'తప్పులు, ఫిర్యాదులు', 'Corrections and complaints')}</h2>
+<p>${T(ctx, 'యాప్‌లో వార్త కింద "రిపోర్ట్" నొక్కండి, లేదా', 'Tap "Report" under the story in the app, or see')} <a href="/grievance">${T(ctx, 'ఫిర్యాదుల పేజీ', 'our grievance page')}</a>.</p></div>`;
+    this.send(res, layout(ctx, { title: T(ctx, 'సంప్రదించండి — MAVY NEWS', 'Contact us — MAVY NEWS'), description: 'Contact MAVY NEWS — mavytechsolutions@gmail.com', canonical: absolute('/contact'), body, side: await this.sideHtml(ctx) }), 200, 3600);
   }
 
   @Get('grievance')
@@ -493,6 +509,7 @@ ${officer}</div>`;
     const rows = await this.svc.sitemapRows();
     const cats = (await this.svc.categories()).filter((c) => !c.isVirtual || c.slug === 'breaking');
     const urls = [`<url><loc>${absolute('/')}</loc><changefreq>hourly</changefreq></url>`,
+      `<url><loc>${absolute('/contact')}</loc></url>`, `<url><loc>${absolute('/about')}</loc></url>`,
       ...cats.map((c) => `<url><loc>${absolute(`/c/${c.slug}`)}</loc><changefreq>hourly</changefreq></url>`),
       ...HOME_DISTRICTS.map((d) => `<url><loc>${absolute(`/d/${d}`)}</loc><changefreq>hourly</changefreq></url>`),
       ...rows.map((r) => `<url><loc>${esc(absolute(`/n/${r.slug}`))}</loc><lastmod>${(r.updatedAt ?? r.publishedAt)!.toISOString()}</lastmod></url>`)];

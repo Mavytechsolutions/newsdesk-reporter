@@ -64,7 +64,7 @@ function ArticleBody({ a, lang, setLang, navigation }: { a: ArticleCard; lang: '
         <Meta a={a} />
         <T bold size={23} style={{ marginTop: 8 }}>{a.headline}</T>
         <T size={12} color={th.muted} style={{ marginTop: 8 }}>
-          {a.reporter ? `${t.by}: ${a.reporter} · ` : ''}{t.source}: {a.sourceLabel} · {new Date(a.publishedAt).toLocaleString(lang === 'te' ? 'te-IN' : 'en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+          {lang === 'te' ? 'ప్రచురణకర్త' : 'Publisher'}: MAVY NEWS · {a.reporter ? `${t.by}: ${a.reporter} · ` : ''}{t.source}: {a.sourceLabel} · {new Date(a.publishedAt).toLocaleString(lang === 'te' ? 'te-IN' : 'en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
           {a.updatedAt > a.publishedAt ? ` · ${t.updated} ${timeAgo(a.updatedAt, t)}` : ''}
         </T>
 

@@ -18,6 +18,7 @@ export function configureApp(app: INestApplication) {
       { path: 'd/:slug', method: RequestMethod.GET },
       { path: 'find', method: RequestMethod.GET },
       { path: 'about', method: RequestMethod.GET },
+      { path: 'contact', method: RequestMethod.GET },
       { path: 'grievance', method: RequestMethod.GET },
       { path: 'privacy', method: RequestMethod.GET },
       { path: 'delete-account', method: RequestMethod.GET },

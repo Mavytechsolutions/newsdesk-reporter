@@ -39,6 +39,9 @@ img{max-width:100%;display:block}
 .lang a[aria-current]{background:#fff;color:var(--ink);font-weight:700}
 .get-app{background:var(--green);color:#fff;text-decoration:none;font-weight:700;font-size:15px;padding:8px 16px;border-radius:999px;white-space:nowrap}
 .get-app:hover{background:var(--green-dark)}
+.contact-link{color:#fff;font-weight:700;font-size:15px;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
+.contact-link:hover{color:#C9D3E3}
+@media (max-width:520px){.contact-link{font-size:13.5px}}
 @media (max-width:520px){.brand b{font-size:23px}.brand small{font-size:12px}.mast .wrap{gap:8px}.lang a{padding:4px 10px;font-size:13.5px}.lang a[aria-current]{display:none}.mast .get-app{font-size:13.5px;padding:6px 11px}.find input{width:110px}}
 
 /* ---------- sections nav ---------- */

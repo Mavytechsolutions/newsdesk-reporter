@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, FlatList, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, FlatList, Linking, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
@@ -221,6 +221,8 @@ export function ProfileScreen({ navigation }: any) {
         </View>
       </Section>
 
+      <ContactSection te={language === 'te'} />
+
       <Row icon="location-outline" label={t.myPlaces} value={places.length ? places.map(name).join(', ') : t.allPlaces} onPress={() => navigation.navigate('Places')} />
       {loggedIn && <Row icon="pricetags-outline" label={t.myTopics} value={me.data?.categories.map(name).join(', ')} onPress={() => navigation.navigate('Topics')} />}
       {loggedIn && <Row icon="time-outline" label={t.history} onPress={() => navigation.navigate('History')} />}
@@ -290,6 +292,39 @@ export function ServerSetting() {
         style={[styles.input, { color: th.text, borderColor: th.border, fontSize: 15 }]} accessibilityLabel={t.server} />
       <Button title={t.testSave} kind="outline" icon="wifi-outline" loading={busy} onPress={save} style={{ marginTop: 8 }} />
       {msg ? <T color={msg.ok ? th.green : th.red} style={{ marginTop: 6 }}>{msg.text}</T> : null}
+    </Section>
+  );
+}
+
+const CONTACT_EMAIL = 'mavytechsolutions@gmail.com';
+const SITE = 'https://www.mavynews.com';
+
+/** "Contact us" — required by Google Play for news apps. Visible to everyone, logged in or not. */
+function ContactSection({ te }: { te: boolean }) {
+  const th = useTheme();
+  const open = (url: string) => Linking.openURL(url).catch(() => Alert.alert(te ? 'సంప్రదించండి' : 'Contact us', url.replace('mailto:', '')));
+  const line = (icon: any, label: string, value: string, url: string) => (
+    <Pressable onPress={() => open(url)} accessibilityRole="link" style={({ pressed }) => [styles.row, { paddingVertical: 8, opacity: pressed ? 0.7 : 1 }]}>
+      <Ionicons name={icon} size={20} color={th.green} />
+      <View style={{ flex: 1, marginLeft: 10 }}>
+        <T size={12.5} color={th.muted}>{label}</T>
+        <T bold color={th.text} selectable>{value}</T>
+      </View>
+      <Ionicons name="open-outline" size={16} color={th.muted} />
+    </Pressable>
+  );
+  return (
+    <Section title={te ? 'మమ్మల్ని సంప్రదించండి (Contact us)' : 'Contact us'}>
+      <T size={13} color={th.muted} style={{ marginBottom: 4 }}>
+        {te ? 'ప్రశ్నలు, వార్తా సమాచారం, సవరణలు లేదా ఫిర్యాదుల కోసం.' : 'For questions, news tips, corrections or complaints.'}
+      </T>
+      {line('mail-outline', te ? 'ఈమెయిల్' : 'Email', CONTACT_EMAIL, `mailto:${CONTACT_EMAIL}?subject=MAVY%20NEWS`)}
+      {line('globe-outline', te ? 'వెబ్‌సైట్' : 'Website', 'www.mavynews.com', `${SITE}/contact`)}
+      {line('alert-circle-outline', te ? 'ఫిర్యాదులు' : 'Grievances', te ? 'ఫిర్యాదుల పేజీ' : 'Grievance page', `${SITE}/grievance`)}
+      {line('document-text-outline', te ? 'గోప్యతా విధానం' : 'Privacy policy', 'www.mavynews.com/privacy', `${SITE}/privacy`)}
+      <T size={12} color={th.muted} style={{ marginTop: 6 }}>
+        {te ? 'ప్రచురణకర్త: MAVY NEWS — MAVY TECH SOLUTIONS PVT LTD, అనంతపురం, ఆంధ్రప్రదేశ్' : 'Publisher: MAVY NEWS — MAVY TECH SOLUTIONS PVT LTD, Anantapur, Andhra Pradesh'}
+      </T>
     </Section>
   );
 }
