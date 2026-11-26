@@ -332,3 +332,34 @@ export const userCategoriesRelations = relations(userCategories, ({ one }) => ({
 export const categoriesRelations = relations(categories, ({ many }) => ({
   articles: many(articles),
 }));
+
+// ---------- Auto News (Step 1: settings + sources) ----------
+export const autoNewsSourceKindEnum = pgEnum('auto_news_source_kind', ['PRESS_RELEASE', 'OFFICIAL_ALERT', 'RSS', 'TIP_ONLY']);
+
+/** One row only (id = 1). Auto News stays OFF and in test mode until the Super Admin changes it. */
+export const autoNewsSettings = pgTable('auto_news_settings', {
+  id: integer('id').primaryKey().default(1),
+  enabled: boolean('enabled').notNull().default(false),
+  testMode: boolean('test_mode').notNull().default(true),
+  intervalMinutes: integer('interval_minutes').notNull().default(30),
+  dailyCostLimitCents: integer('daily_cost_limit_cents').notNull().default(150),
+  updatedBy: uuid('updated_by').references(() => users.id),
+  updatedAt: ts('updated_at').notNull().defaultNow(),
+});
+
+export const autoNewsSources = pgTable('auto_news_sources', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull(),
+  url: text('url').notNull().unique(),
+  kind: autoNewsSourceKindEnum('kind').notNull().default('PRESS_RELEASE'),
+  enabled: boolean('enabled').notNull().default(true),
+  /** Publish without approval. OFF unless the Super Admin turns it on, and only allowed for official alerts. */
+  autoPublish: boolean('auto_publish').notNull().default(false),
+  /** Photos from this source may be used (government sources only). */
+  photosAllowed: boolean('photos_allowed').notNull().default(false),
+  note: text('note'),
+  lastCheckedAt: ts('last_checked_at'),
+  lastError: text('last_error'),
+  createdBy: uuid('created_by').references(() => users.id),
+  createdAt: ts('created_at').notNull().defaultNow(),
+});

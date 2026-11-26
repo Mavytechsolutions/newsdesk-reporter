@@ -50,6 +50,13 @@
       "when": 1795494289241,
       "tag": "0006_staff_password_reset",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795690699576,
+      "tag": "0007_auto_news_settings",
+      "breakpoints": true
     }
   ]
 }

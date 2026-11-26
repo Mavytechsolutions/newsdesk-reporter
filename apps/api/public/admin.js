@@ -85,6 +85,7 @@
     show('loginView', !t); show('noAccess', !!t && !allowed); show('appView', allowed); show('logout', !!t);
     $('who').textContent = t ? (t.name || '') + (t.role ? ' · ' + (ROLE[t.role] || t.role) : '') : '';
     show('tabSubs', !!t && t.role === 'SUPER_ADMIN');
+    show('tabAuto', !!t && t.role === 'SUPER_ADMIN');
     if (allowed) { switchTab(state.tab); counts(); }
   }
 
@@ -99,12 +100,12 @@
     b.addEventListener('click', function () { switchTab(b.getAttribute('data-tab')); });
   });
   function switchTab(tab) {
-    if (tab === 'subs' && (!state.me || state.me.role !== 'SUPER_ADMIN')) tab = 'review';
+    if ((tab === 'subs' || tab === 'auto') && (!state.me || state.me.role !== 'SUPER_ADMIN')) tab = 'review';
     state.tab = tab;
     Array.prototype.forEach.call(document.querySelectorAll('.tabs button'), function (b) { b.classList.toggle('on', b.getAttribute('data-tab') === tab); });
-    ['review', 'apps', 'people', 'subs'].forEach(function (id) { show(id, id === tab); });
+    ['review', 'apps', 'people', 'subs', 'auto'].forEach(function (id) { show(id, id === tab); });
     state.objectUrls.forEach(function (u) { URL.revokeObjectURL(u); }); state.objectUrls = [];
-    ({ review: loadReview, apps: loadApps, people: loadPeople, subs: loadSubs })[tab]();
+    ({ review: loadReview, apps: loadApps, people: loadPeople, subs: loadSubs, auto: loadAuto })[tab]();
     window.scrollTo(0, 0);
   }
 
@@ -325,4 +326,70 @@
   });
 
   start();
+
+  // ---------- 5. Auto News (master admin only) ----------
+  var KIND = { PRESS_RELEASE: 'ప్రెస్ నోట్లు (Press releases)', OFFICIAL_ALERT: 'అధికారిక హెచ్చరికలు (Official alerts)', RSS: 'RSS ఫీడ్', TIP_ONLY: 'టిప్ మాత్రమే (Tip only)' };
+  function loadAuto() {
+    msg('anMsg', ''); msg('anSrcMsg', '');
+    call('GET', '/admin/auto-news').then(function (r) {
+      var s = r.settings;
+      $('anEnabled').checked = s.enabled; $('anTest').checked = s.testMode;
+      $('anInterval').value = String(s.intervalMinutes); $('anLimit').value = s.dailyCostLimitUsd.toFixed(2);
+      var key = $('anKey'); key.innerHTML = '';
+      key.appendChild(h('div', { class: 'msg ' + (r.keyConfigured ? 'ok' : 'err'), text: r.keyConfigured
+        ? '🔑 Claude API కీ సర్వర్‌లో ఉంది (Claude API key is set on the server — it is never shown here).'
+        : '🔑 Claude API కీ ఇంకా సర్వర్‌లో లేదు. స్టెప్ 3 లో జోడిస్తాం. (Claude API key not set on the server yet — we add it in Step 3.)' }));
+      renderSources(r.sources);
+    }).catch(function (e) { msg('anMsg', e.message); });
+  }
+  function renderSources(list) {
+    var box = $('anSources'); box.innerHTML = '';
+    if (!list.length) { box.appendChild(h('p', { class: 'help', text: 'మూలాలు లేవు. కింద జోడించండి. (No sources yet — add one below.)' })); return; }
+    list.forEach(function (x) {
+      function toggle(field, label, allowed, help) {
+        var cb = h('input', { type: 'checkbox' }); cb.checked = !!x[field]; if (!allowed) cb.disabled = true;
+        cb.addEventListener('change', function () {
+          var body = {}; body[field] = cb.checked;
+          if (field === 'autoPublish' && cb.checked && !confirm('ఈ మూలం నుంచి వార్తలు మీ ఆమోదం లేకుండా నేరుగా ప్రచురించబడతాయి. సరేనా?\n(Posts from this source will go live WITHOUT approval. Are you sure?)')) { cb.checked = false; return; }
+          call('PATCH', '/admin/auto-news/sources/' + x.id, body).then(function () { msg('anSrcMsg', '✔ సేవ్ అయింది (Saved)', true); loadAuto(); },
+            function (e) { cb.checked = !cb.checked; msg('anSrcMsg', e.message); });
+        });
+        return h('label', { title: help || '' }, cb, label);
+      }
+      var gov = x.isGovernment;
+      box.appendChild(h('div', { class: 'src' },
+        h('h3', null, h('span', { class: 'badge kind ' + x.kind, text: KIND[x.kind] || x.kind }), x.name),
+        h('a', { href: x.url, target: '_blank', rel: 'noopener noreferrer', text: x.url }),
+        x.note ? h('div', { class: 'meta', text: '📝 ' + x.note }) : null,
+        h('div', { class: 'meta', text: (x.lastCheckedAt ? 'చివరిగా చూసింది (Last checked): ' + ago(x.lastCheckedAt) : 'ఇంకా చూడలేదు (Not checked yet)') + (gov ? ' · 🏛 ప్రభుత్వ సైట్ (Government site)' : '') }),
+        x.lastError ? h('div', { class: 'msg err', text: '⚠ ' + x.lastError }) : null,
+        h('div', { class: 'toggles' },
+          toggle('enabled', 'ఆన్ (On)', true),
+          toggle('photosAllowed', 'ఫోటోలు వాడవచ్చు (Use photos)', gov && x.kind !== 'TIP_ONLY', 'Government sites only'),
+          x.kind === 'OFFICIAL_ALERT' ? toggle('autoPublish', 'ఆమోదం లేకుండా ప్రచురించు (Publish without approval)', gov, 'Official government alerts only') : null),
+        h('div', { class: 'actions' }, h('button', { class: 'btn out small', type: 'button', text: '🗑 తీసివేయండి (Remove)', onclick: function () {
+          if (!confirm('"' + x.name + '" ను జాబితా నుంచి తీసివేయాలా? (Remove this source?)')) return;
+          call('DELETE', '/admin/auto-news/sources/' + x.id).then(function () { msg('anSrcMsg', '✔ తీసివేశాం (Removed)', true); loadAuto(); }, function (e) { msg('anSrcMsg', e.message); });
+        } }))));
+    });
+  }
+  $('anSave').addEventListener('click', function () {
+    var limit = Number(String($('anLimit').value).replace(',', '.'));
+    if (!(limit >= 0 && limit <= 100)) { msg('anMsg', 'ఖర్చు పరిమితి 0 నుంచి 100 డాలర్ల మధ్య ఉండాలి (Limit must be between 0 and 100 dollars)'); return; }
+    if ($('anEnabled').checked && !$('anTest').checked && !confirm('టెస్ట్ మోడ్ ఆఫ్ — ఆమోదించిన వార్తలు అందరికీ కనిపిస్తాయి. సరేనా?\n(Test mode OFF — approved posts will be visible to everyone. Continue?)')) return;
+    $('anSave').disabled = true;
+    call('PATCH', '/admin/auto-news/settings', { enabled: $('anEnabled').checked, testMode: $('anTest').checked, intervalMinutes: Number($('anInterval').value), dailyCostLimitUsd: Math.round(limit * 100) / 100 })
+      .then(function () { msg('anMsg', '✔ సెట్టింగ్స్ సేవ్ అయ్యాయి (Settings saved)', true); loadAuto(); })
+      .catch(function (e) { msg('anMsg', e.message); })
+      .then(function () { $('anSave').disabled = false; });
+  });
+  $('anAdd').addEventListener('submit', function (e) {
+    e.preventDefault(); msg('anAddMsg', '');
+    var body = { name: $('anName').value.trim(), url: $('anUrl').value.trim(), kind: $('anKind').value, photosAllowed: $('anPhotos').checked };
+    if ($('anNote').value.trim()) body.note = $('anNote').value.trim();
+    call('POST', '/admin/auto-news/sources', body).then(function (r) {
+      ['anName', 'anUrl', 'anNote'].forEach(function (id) { $(id).value = ''; }); $('anPhotos').checked = false;
+      msg('anAddMsg', '✔ జోడించాం (Added)' + (r.notes && r.notes.length ? ' — ' + r.notes.join(' ') : ''), true); loadAuto();
+    }).catch(function (err) { msg('anAddMsg', err.message); });
+  });
 })();

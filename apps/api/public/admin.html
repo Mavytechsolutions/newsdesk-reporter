@@ -71,6 +71,11 @@ details summary{cursor:pointer;font-weight:700;margin-top:14px}
 a.tel{color:var(--navy);font-weight:700}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media(max-width:560px){.grid2{grid-template-columns:1fr}header .who{display:none}header .logo{font-size:16px}header{flex-wrap:wrap}}
+.src{border-bottom:1px solid var(--border);padding:12px 0}.src:last-child{border-bottom:0}
+.src h3{margin:0 0 4px;font-size:15px}.src a{word-break:break-all;font-size:13px;color:#2563EB}
+.toggles{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:8px}.toggles label{display:flex;align-items:center;gap:6px;margin:0;font-size:14px}
+.toggles input{width:20px;height:20px}
+.kind{background:#2563EB}.kind.TIP_ONLY{background:#B45309}.kind.OFFICIAL_ALERT{background:var(--red)}.kind.RSS{background:#7C3AED}
 </style>
 </head>
 <body>
@@ -110,6 +115,7 @@ a.tel{color:var(--navy);font-weight:700}
       <button data-tab="apps">🪪 దరఖాస్తులు</button>
       <button data-tab="people">🏅 జర్నలిస్టులు</button>
       <button data-tab="subs" id="tabSubs" class="hidden">👥 సబ్-అడ్మిన్లు</button>
+      <button data-tab="auto" id="tabAuto" class="hidden">🤖 ఆటో న్యూస్</button>
     </div>
 
     <!-- REVIEW -->
@@ -182,6 +188,53 @@ a.tel{color:var(--navy);font-weight:700}
         <div id="subMsg"></div>
         <div id="subList"></div>
       </section>
+    </section>
+
+    <!-- AUTO NEWS (master admin only) -->
+    <section id="auto" class="hidden">
+      <section class="card">
+        <h2 style="margin-top:0">🤖 ఆటో న్యూస్ సెట్టింగ్స్ (Auto News settings)</h2>
+        <p class="help">ప్రభుత్వ ప్రెస్ నోట్లు, అధికారిక హెచ్చరికల నుంచి కొత్త వార్తలను సర్వర్ వెతికి, Claude తో MAVY శైలిలో రాసి, మీ ఆమోదం కోసం ఉంచుతుంది. (The server finds new items from official sources, Claude writes them in MAVY style, and they wait for your approval.)</p>
+        <div id="anKey"></div>
+        <label class="check"><input type="checkbox" id="anEnabled"> ఆటో న్యూస్ ఆన్ (Auto News ON)</label>
+        <label class="check"><input type="checkbox" id="anTest"> టెస్ట్ మోడ్ — వార్తలు అడ్మిన్‌కు మాత్రమే కనిపిస్తాయి (Test mode — posts visible only to admins)</label>
+        <div class="grid2">
+          <div><label>ఎంత తరచుగా చూడాలి (Check every)</label>
+            <select id="anInterval">
+              <option value="15">15 నిమిషాలు (15 min)</option><option value="30">30 నిమిషాలు (30 min)</option>
+              <option value="60">1 గంట (1 hour)</option><option value="120">2 గంటలు (2 hours)</option>
+              <option value="180">3 గంటలు (3 hours)</option><option value="360">6 గంటలు (6 hours)</option>
+            </select></div>
+          <div><label>రోజువారీ ఖర్చు పరిమితి (Daily cost limit, US $) <small>— చేరితే ఆ రోజుకు ఆగుతుంది (stops for the day)</small></label>
+            <input type="text" id="anLimit" inputmode="decimal" maxlength="6"></div>
+        </div>
+        <div id="anMsg"></div>
+        <button class="btn" type="button" id="anSave" style="width:100%;margin-top:14px">సేవ్ చేయండి (Save settings)</button>
+      </section>
+
+      <section class="card">
+        <h2 style="margin-top:0">వార్తా మూలాలు (Sources)</h2>
+        <div id="anSrcMsg"></div>
+        <div id="anSources"></div>
+      </section>
+
+      <form id="anAdd" class="card" autocomplete="off">
+        <h2 style="margin-top:0">కొత్త మూలం జోడించండి (Add a source)</h2>
+        <p class="help">ఈనాడు, సాక్షి, TV9, Way2News వంటి ఇతర ఛానెళ్లు "టిప్ మాత్రమే" — హెడ్‌లైన్ + లింక్ మీకు చూపిస్తాం, వార్తను కాపీ చేయం. (Other news channels are saved as "tip only": headline + link for you, never copied.)</p>
+        <label>పేరు (Name) *</label><input type="text" id="anName" maxlength="120" required placeholder="ఉదా: అనంతపురం కలెక్టరేట్ ప్రెస్ నోట్లు">
+        <label>వెబ్ చిరునామా (Web address) *</label><input type="text" id="anUrl" maxlength="500" required placeholder="https://…" inputmode="url">
+        <label>రకం (Type) *</label>
+        <select id="anKind">
+          <option value="PRESS_RELEASE">ప్రభుత్వ ప్రెస్ నోట్లు (Government press releases)</option>
+          <option value="OFFICIAL_ALERT">అధికారిక హెచ్చరికలు — IMD, APSDMA (Official alerts)</option>
+          <option value="RSS">RSS ఫీడ్ — అనుమతి ఉన్న సైట్లు మాత్రమే (RSS feed, only sites that allow it)</option>
+          <option value="TIP_ONLY">టిప్ మాత్రమే — ఇతర ఛానెళ్లు (Tip only — other news channels)</option>
+        </select>
+        <label class="check"><input type="checkbox" id="anPhotos"> ఈ సైట్ ఫోటోలు వాడవచ్చు — ప్రభుత్వ సైట్లు మాత్రమే (Photos may be used — government sites only)</label>
+        <label>నోట్ (Note) <small>— ఐచ్ఛికం</small></label><input type="text" id="anNote" maxlength="300">
+        <div id="anAddMsg"></div>
+        <button class="btn" type="submit" style="width:100%;margin-top:14px">జోడించండి (Add source)</button>
+      </form>
     </section>
   </section>
 </main>
