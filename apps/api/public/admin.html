@@ -75,6 +75,7 @@ a.tel{color:var(--navy);font-weight:700}
 .src h3{margin:0 0 4px;font-size:15px}.src a{word-break:break-all;font-size:13px;color:#2563EB}
 .toggles{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:8px}.toggles label{display:flex;align-items:center;gap:6px;margin:0;font-size:14px}
 .toggles input{width:20px;height:20px}
+.ist{background:#2563EB}.ist.NEW{background:var(--green)}.ist.DUPLICATE{background:#6B7280}.ist.TIP{background:#B45309}.ist.ALERT{background:var(--red)}
 .kind{background:#2563EB}.kind.TIP_ONLY{background:#B45309}.kind.OFFICIAL_ALERT{background:var(--red)}.kind.RSS{background:#7C3AED}
 </style>
 </head>
@@ -210,6 +211,33 @@ a.tel{color:var(--navy);font-weight:700}
         </div>
         <div id="anMsg"></div>
         <button class="btn" type="button" id="anSave" style="width:100%;margin-top:14px">సేవ్ చేయండి (Save settings)</button>
+      </section>
+
+      <section class="card">
+        <h2 style="margin-top:0">ఈ రోజు (Today)</h2>
+        <div class="stats" style="margin-bottom:8px">
+          <div class="stat"><b id="anFound">–</b><span>దొరికినవి<br>Items found</span></div>
+          <div class="stat"><b id="anNew">–</b><span>కొత్తవి<br>New</span></div>
+          <div class="stat"><b id="anDup">–</b><span>డూప్లికేట్<br>Duplicates</span></div>
+          <div class="stat"><b id="anTips">–</b><span>టిప్స్<br>Tips</span></div>
+        </div>
+        <p class="help">Auto News ఆన్‌లో ఉంటే సర్వర్ ప్రతి కొన్ని నిమిషాలకు మూలాలను చూస్తుంది. ఇప్పుడే చూడాలంటే కింది బటన్ నొక్కండి — ఇది ఉచితం (Claude ఇంకా వాడటం లేదు). (While Auto News is ON the server checks on its own. Press the button to check right now — free, Claude is not used yet.)</p>
+        <button class="btn" type="button" id="anCheck" style="width:100%">🔄 ఇప్పుడే చూడండి (Check now)</button>
+        <div id="anCheckMsg"></div>
+      </section>
+
+      <section class="card">
+        <div class="row"><h2 style="margin:0">దొరికిన వార్తలు (Collected items)</h2>
+          <select id="anItemStatus" style="flex:none;width:auto">
+            <option value="">అన్నీ (All)</option><option value="NEW">కొత్తవి (New)</option>
+            <option value="DUPLICATE">డూప్లికేట్ (Duplicates)</option><option value="TIP">టిప్స్ (Tips)</option>
+          </select></div>
+        <div id="anItems" style="margin-top:10px"></div>
+      </section>
+
+      <section class="card">
+        <h2 style="margin-top:0">లాగ్ (Check log)</h2>
+        <div id="anRuns"></div>
       </section>
 
       <section class="card">

@@ -6,6 +6,9 @@
  *   POST   /admin/auto-news/sources            { name, url, kind, note?, photosAllowed? }
  *   PATCH  /admin/auto-news/sources/:id        { name?, enabled?, autoPublish?, photosAllowed?, note? }
  *   DELETE /admin/auto-news/sources/:id
+ *   POST   /admin/auto-news/check-now          { sourceId? }  check sources straight away (works even while Auto News is OFF)
+ *   GET    /admin/auto-news/items?status=&limit=  collected items (newest first)
+ *   GET    /admin/auto-news/runs?limit=         the check log
  *
  * Safety rules enforced here (not only in the page):
  *  - Other news channels / apps (Eenadu, Sakshi, TV9, Way2News …) can only be "tip only" sources:
@@ -18,13 +21,15 @@
  */
 import {
   BadRequestException, Body, ConflictException, Controller, Delete, Get, HttpCode, Injectable, Module, NotFoundException,
-  Param, ParseUUIDPipe, Patch, Post,
+  Param, ParseUUIDPipe, Patch, Post, Query, ServiceUnavailableException,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { Type } from 'class-transformer';
-import { IsBoolean, IsIn, IsInt, IsNumber, IsOptional, IsString, IsUrl, Max, MaxLength, Min, MinLength } from 'class-validator';
-import { asc, eq } from 'drizzle-orm';
+import { IsBoolean, IsIn, IsInt, IsNumber, IsOptional, IsString, IsUrl, IsUUID, Max, MaxLength, Min, MinLength } from 'class-validator';
+import { and, asc, desc, eq, gte, sql } from 'drizzle-orm';
 import { Db, InjectDb } from '../db/db.module';
-import { autoNewsSettings, autoNewsSources } from '../db/schema';
+import { autoNewsItems, autoNewsRuns, autoNewsSettings, autoNewsSources } from '../db/schema';
+import { AutoNewsRunner } from './runner.service';
 import { AuthUser, ClientIp, CurrentUser, Roles } from '../common/auth.decorators';
 import { AuditService } from '../audit/audit.module';
 
@@ -74,6 +79,13 @@ class EditSourceDto {
   @IsOptional() @IsString() @MaxLength(300) note?: string;
 }
 
+class CheckDto { @IsOptional() @IsUUID() sourceId?: string; }
+class ItemsDto {
+  @IsOptional() @IsIn(['NEW', 'DUPLICATE', 'TIP', 'SKIPPED']) status?: 'NEW' | 'DUPLICATE' | 'TIP' | 'SKIPPED';
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(200) limit?: number;
+}
+class RunsDto { @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(200) limit?: number; }
+
 type SourceRow = typeof autoNewsSources.$inferSelect;
 
 @Injectable()
@@ -104,8 +116,32 @@ export class AutoNewsService {
   }
 
   async overview() {
-    const [s, src] = await Promise.all([this.settings(), this.sources()]);
-    return { settings: this.view(s), sources: src.map((r) => this.sourceView(r)), keyConfigured: this.keyConfigured() };
+    const [s, src, today] = await Promise.all([this.settings(), this.sources(), this.today()]);
+    return { settings: this.view(s), sources: src.map((r) => this.sourceView(r)), keyConfigured: this.keyConfigured(), today };
+  }
+
+  /** Today (India time): how many items were found, and of what kind. */
+  async today() {
+    const start = startOfTodayIST();
+    const rows = await this.db.select({ status: autoNewsItems.status, n: sql<number>`count(*)::int` }).from(autoNewsItems)
+      .where(gte(autoNewsItems.createdAt, start)).groupBy(autoNewsItems.status);
+    const by = Object.fromEntries(rows.map((r) => [r.status, r.n]));
+    return { found: rows.reduce((a, r) => a + r.n, 0), new: by.NEW ?? 0, duplicates: by.DUPLICATE ?? 0, tips: by.TIP ?? 0 };
+  }
+
+  async items(dto: ItemsDto) {
+    const rows = await this.db.select().from(autoNewsItems)
+      .where(dto.status ? eq(autoNewsItems.status, dto.status) : undefined)
+      .orderBy(desc(autoNewsItems.createdAt)).limit(dto.limit ?? 50);
+    return rows.map((r) => ({
+      id: r.id, sourceName: r.sourceName, url: r.url, title: r.title, summary: r.summary, area: r.area, language: r.language,
+      status: r.status, duplicateOf: r.duplicateOf, publishedAt: r.publishedAt, createdAt: r.createdAt,
+      alert: r.details ? { event: (r.details as any).event, severity: (r.details as any).severity, expires: (r.details as any).expires, headlineTe: (r.details as any).headlineTe } : null,
+    }));
+  }
+
+  runs(dto: RunsDto) {
+    return this.db.select().from(autoNewsRuns).orderBy(desc(autoNewsRuns.startedAt)).limit(dto.limit ?? 30);
   }
 
   async updateSettings(dto: SettingsDto, user: AuthUser, ip?: string) {
@@ -179,10 +215,27 @@ export class AutoNewsService {
   }
 }
 
+export function startOfTodayIST(): Date {
+  const ist = new Date(Date.now() + 5.5 * 3600_000);
+  return new Date(Date.UTC(ist.getUTCFullYear(), ist.getUTCMonth(), ist.getUTCDate()) - 5.5 * 3600_000);
+}
+
 @Controller('admin/auto-news')
 @Roles('SUPER_ADMIN')
 export class AutoNewsController {
-  constructor(private svc: AutoNewsService) {}
+  constructor(private svc: AutoNewsService, private runner: AutoNewsRunner, private audit: AuditService) {}
+
+  @Post('check-now') @HttpCode(200) @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  async checkNow(@Body() dto: CheckDto, @CurrentUser() user: AuthUser, @ClientIp() ip: string) {
+    const results = await this.runner.runAll('manual', dto.sourceId);
+    if (!results) throw new ServiceUnavailableException('A check is already running. Please wait a minute and try again.');
+    await this.audit.log({ actorId: user.id, action: 'auto_news.check_now', entity: 'auto_news_source', entityId: dto.sourceId ?? null, ip,
+      metadata: { results: results.map((r) => ({ name: r.sourceName, added: r.added, error: r.error })) } });
+    return { results };
+  }
+
+  @Get('items') items(@Query() dto: ItemsDto) { return this.svc.items(dto); }
+  @Get('runs') runs(@Query() dto: RunsDto) { return this.svc.runs(dto); }
 
   @Get() overview() { return this.svc.overview(); }
 
@@ -201,5 +254,5 @@ export class AutoNewsController {
   remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser, @ClientIp() ip: string) { return this.svc.removeSource(id, user, ip); }
 }
 
-@Module({ controllers: [AutoNewsController], providers: [AutoNewsService], exports: [AutoNewsService] })
+@Module({ controllers: [AutoNewsController], providers: [AutoNewsService, AutoNewsRunner], exports: [AutoNewsService, AutoNewsRunner] })
 export class AutoNewsModule {}

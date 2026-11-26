@@ -43,12 +43,14 @@ beforeAll(async () => {
 afterAll(async () => { await app?.close(); await pool?.end(); });
 
 describe('Auto News settings', () => {
-  it('starts OFF, in test mode, every 30 minutes, $1.50 a day, with AP I&PR as the first source', async () => {
+  it('starts OFF, in test mode, every 30 minutes, $1.50 a day; NDMA alerts on, AP I&PR and PIB listed but off', async () => {
     const r = await http.get(api('/admin/auto-news')).set(as(admin)).expect(200);
     expect(r.body.settings).toMatchObject({ enabled: false, testMode: true, intervalMinutes: 30, dailyCostLimitUsd: 1.5 });
     expect(r.body.keyConfigured).toBe(false);
-    expect(r.body.sources).toHaveLength(1);
-    expect(r.body.sources[0]).toMatchObject({ kind: 'PRESS_RELEASE', enabled: true, autoPublish: false, isGovernment: true });
+    expect(r.body.sources).toHaveLength(3);
+    expect(r.body.sources[0]).toMatchObject({ kind: 'PRESS_RELEASE', enabled: false, autoPublish: false, isGovernment: true });
+    expect(r.body.sources[1]).toMatchObject({ kind: 'OFFICIAL_ALERT', enabled: true, autoPublish: false });
+    expect(r.body.sources[2]).toMatchObject({ kind: 'RSS', enabled: false });
     expect(JSON.stringify(r.body)).not.toMatch(/sk-ant/);
   });
   it('only the master admin can see or change it', async () => {
@@ -72,11 +74,11 @@ describe('Auto News sources', () => {
   let alertId = '';
   it('adds a government source', async () => {
     const r = await http.post(api('/admin/auto-news/sources')).set(as(admin))
-      .send({ name: 'PIB press releases', url: 'https://pib.gov.in/RssMain.aspx?ModId=6&Lang=1&Regid=3', kind: 'RSS', photosAllowed: true }).expect(201);
+      .send({ name: 'Test government press releases', url: 'https://example.gov.in/press/rss.xml', kind: 'RSS', photosAllowed: true }).expect(201);
     expect(r.body.source).toMatchObject({ kind: 'RSS', photosAllowed: true, autoPublish: false, isGovernment: true });
   });
   it('refuses the same address twice and a non-web address', async () => {
-    await http.post(api('/admin/auto-news/sources')).set(as(admin)).send({ name: 'PIB again', url: 'https://pib.gov.in/RssMain.aspx?ModId=6&Lang=1&Regid=3', kind: 'RSS' }).expect(409);
+    await http.post(api('/admin/auto-news/sources')).set(as(admin)).send({ name: 'Same again', url: 'https://example.gov.in/press/rss.xml', kind: 'RSS' }).expect(409);
     await http.post(api('/admin/auto-news/sources')).set(as(admin)).send({ name: 'Bad', url: 'pib.gov.in', kind: 'RSS' }).expect(400);
     await http.post(api('/admin/auto-news/sources')).set(as(admin)).send({ name: 'Bad', url: 'javascript:alert(1)', kind: 'RSS' }).expect(400);
   });

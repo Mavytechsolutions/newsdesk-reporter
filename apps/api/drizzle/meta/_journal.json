@@ -57,6 +57,13 @@
       "when": 1795690699576,
       "tag": "0007_auto_news_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1795692065346,
+      "tag": "0008_auto_news_items",
+      "breakpoints": true
     }
   ]
 }

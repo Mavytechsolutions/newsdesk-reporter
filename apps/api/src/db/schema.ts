@@ -1,7 +1,7 @@
 // MAVY NEWS — Phase 1 database schema (Drizzle ORM, PostgreSQL)
 import {
   pgTable, pgEnum, uuid, text, boolean, timestamp, integer, jsonb,
-  primaryKey, index, foreignKey,
+  primaryKey, index, uniqueIndex, foreignKey,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -363,3 +363,47 @@ export const autoNewsSources = pgTable('auto_news_sources', {
   createdBy: uuid('created_by').references(() => users.id),
   createdAt: ts('created_at').notNull().defaultNow(),
 });
+
+// ---------- Auto News (Step 2: collected items + check log) ----------
+/** NEW = waiting to be written by Claude · DUPLICATE = same news already collected · TIP = other channel, headline + link only
+ *  SKIPPED = not for us (old, other state …) */
+export const autoNewsItemStatusEnum = pgEnum('auto_news_item_status', ['NEW', 'DUPLICATE', 'TIP', 'SKIPPED']);
+
+export const autoNewsItems = pgTable('auto_news_items', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  sourceId: uuid('source_id').references(() => autoNewsSources.id, { onDelete: 'set null' }),
+  sourceName: text('source_name').notNull(),
+  externalId: text('external_id').notNull(),
+  url: text('url').notNull(),
+  title: text('title').notNull(),
+  /** Short text from the source (empty for tip-only sources: we never keep other outlets' text). */
+  summary: text('summary'),
+  /** Alert details (event, severity, area, expires, Telugu/English headline) for official alerts. */
+  details: jsonb('details'),
+  area: text('area'),
+  language: text('language'),
+  publishedAt: ts('published_at'),
+  fingerprint: text('fingerprint').notNull(),
+  status: autoNewsItemStatusEnum('status').notNull().default('NEW'),
+  duplicateOf: uuid('duplicate_of'),
+  createdAt: ts('created_at').notNull().defaultNow(),
+}, (t) => ({
+  srcExtIdx: uniqueIndex('auto_news_items_source_ext_idx').on(t.sourceId, t.externalId),
+  fpIdx: index('auto_news_items_fp_idx').on(t.fingerprint, t.createdAt),
+  createdIdx: index('auto_news_items_created_idx').on(t.createdAt),
+}));
+
+/** One row per source per check: what was found, what was new, and any error. */
+export const autoNewsRuns = pgTable('auto_news_runs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  sourceId: uuid('source_id').references(() => autoNewsSources.id, { onDelete: 'set null' }),
+  sourceName: text('source_name').notNull(),
+  trigger: text('trigger').notNull().default('schedule'),
+  found: integer('found').notNull().default(0),
+  added: integer('added').notNull().default(0),
+  duplicates: integer('duplicates').notNull().default(0),
+  skipped: integer('skipped').notNull().default(0),
+  error: text('error'),
+  startedAt: ts('started_at').notNull().defaultNow(),
+  finishedAt: ts('finished_at'),
+}, (t) => ({ startedIdx: index('auto_news_runs_started_idx').on(t.startedAt) }));

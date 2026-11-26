@@ -340,7 +340,43 @@
         ? '🔑 Claude API కీ సర్వర్‌లో ఉంది (Claude API key is set on the server — it is never shown here).'
         : '🔑 Claude API కీ ఇంకా సర్వర్‌లో లేదు. స్టెప్ 3 లో జోడిస్తాం. (Claude API key not set on the server yet — we add it in Step 3.)' }));
       renderSources(r.sources);
+      $('anFound').textContent = r.today.found; $('anNew').textContent = r.today.new;
+      $('anDup').textContent = r.today.duplicates; $('anTips').textContent = r.today.tips;
+      loadItems(); loadRuns();
     }).catch(function (e) { msg('anMsg', e.message); });
+  }
+  var ITEM = { NEW: 'కొత్తది (New)', DUPLICATE: 'డూప్లికేట్ (Duplicate)', TIP: 'టిప్ (Tip)', SKIPPED: 'వదిలేశాం (Skipped)' };
+  function loadItems() {
+    var box = $('anItems'); box.innerHTML = '';
+    var st = $('anItemStatus').value;
+    call('GET', '/admin/auto-news/items?limit=60' + (st ? '&status=' + st : '')).then(function (list) {
+      if (!list.length) { box.appendChild(h('p', { class: 'help', text: 'ఇంకా ఏమీ లేవు. "ఇప్పుడే చూడండి" నొక్కండి. (Nothing yet — press "Check now".)' })); return; }
+      list.forEach(function (x) {
+        box.appendChild(h('div', { class: 'item' },
+          h('div', { style: 'flex:1;min-width:0' },
+            h('div', null, h('span', { class: 'badge ist ' + x.status, text: ITEM[x.status] || x.status }),
+              x.alert ? h('span', { class: 'badge ist ALERT', text: '⚠ ' + x.alert.event + (x.alert.severity ? ' · ' + x.alert.severity : '') }) : null),
+            h('h3', { text: x.title }),
+            x.alert && x.alert.headlineTe ? h('div', { class: 'help', text: x.alert.headlineTe }) : null,
+            x.summary ? h('div', { class: 'help', text: x.summary.length > 220 ? x.summary.slice(0, 220) + '…' : x.summary }) : null,
+            h('div', { class: 'meta', text: '📡 ' + x.sourceName + (x.area ? ' · 📍 ' + x.area : '') + ' · ' + ago(x.publishedAt || x.createdAt)
+              + (x.alert && x.alert.expires ? ' · ⏳ ' + new Date(x.alert.expires).toLocaleString('te-IN', { dateStyle: 'short', timeStyle: 'short' }) + ' వరకు (until)' : '') }),
+            h('a', { href: x.url, target: '_blank', rel: 'noopener noreferrer', style: 'font-size:13px;color:#2563EB;word-break:break-all', text: '🔗 అసలు వార్త (Original)' }))));
+      });
+    }).catch(function (e) { box.appendChild(h('div', { class: 'msg err', text: e.message })); });
+  }
+  function loadRuns() {
+    var box = $('anRuns'); box.innerHTML = '';
+    call('GET', '/admin/auto-news/runs?limit=20').then(function (list) {
+      if (!list.length) { box.appendChild(h('p', { class: 'help', text: 'ఇంకా తనిఖీలు జరగలేదు. (No checks yet.)' })); return; }
+      list.forEach(function (r) {
+        box.appendChild(h('div', { class: 'item' }, h('div', { style: 'flex:1' },
+          h('div', { style: 'font-weight:700;font-size:14px', text: (r.error ? '⚠ ' : '✔ ') + r.sourceName }),
+          h('div', { class: 'meta', text: ago(r.startedAt) + ' · ' + (r.trigger === 'manual' ? 'మీరు నొక్కారు (manual)' : 'ఆటోమేటిక్ (automatic)')
+            + ' · దొరికినవి ' + r.found + ' · కొత్తవి ' + r.added + ' · డూప్లికేట్ ' + r.duplicates + ' · వదిలేసినవి ' + r.skipped }),
+          r.error ? h('div', { class: 'msg err', style: 'margin:6px 0 0', text: r.error }) : null)));
+      });
+    }).catch(function (e) { box.appendChild(h('div', { class: 'msg err', text: e.message })); });
   }
   function renderSources(list) {
     var box = $('anSources'); box.innerHTML = '';
@@ -391,5 +427,16 @@
       ['anName', 'anUrl', 'anNote'].forEach(function (id) { $(id).value = ''; }); $('anPhotos').checked = false;
       msg('anAddMsg', '✔ జోడించాం (Added)' + (r.notes && r.notes.length ? ' — ' + r.notes.join(' ') : ''), true); loadAuto();
     }).catch(function (err) { msg('anAddMsg', err.message); });
+  });
+  $('anItemStatus').addEventListener('change', loadItems);
+  $('anCheck').addEventListener('click', function () {
+    var b = $('anCheck'); b.disabled = true; b.textContent = '⏳ చూస్తున్నాం… (Checking — up to 1 minute)'; msg('anCheckMsg', '');
+    call('POST', '/admin/auto-news/check-now', {}).then(function (r) {
+      var added = r.results.reduce(function (a, x) { return a + x.added; }, 0);
+      var errs = r.results.filter(function (x) { return x.error; }).length;
+      msg('anCheckMsg', '✔ ' + r.results.length + ' మూలాలు చూశాం, ' + added + ' కొత్త వార్తలు దొరికాయి (' + r.results.length + ' sources checked, ' + added + ' new items)' + (errs ? ' · ⚠ ' + errs + ' మూలాల్లో సమస్య — లాగ్ చూడండి (problems in ' + errs + ' — see the log)' : ''), !errs);
+      loadAuto();
+    }).catch(function (e) { msg('anCheckMsg', e.message); })
+      .then(function () { b.disabled = false; b.textContent = '🔄 ఇప్పుడే చూడండి (Check now)'; });
   });
 })();
